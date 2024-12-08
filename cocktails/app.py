@@ -94,9 +94,6 @@ def create_app(config_class=ProductionConfig):
 
 
 
-
-
-
     battle_model = BattleModel()
 
     ####################################################
