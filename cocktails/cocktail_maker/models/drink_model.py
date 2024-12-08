@@ -3,8 +3,6 @@ import logging
 import requests
 from typing import Any, List
 
-from sqlalchemy import event
-from sqlalchemy.exc import IntegrityError
 
 from cocktail_maker.db import db
 from cocktail_maker.utils.logger import configure_logger

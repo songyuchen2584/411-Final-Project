@@ -2,8 +2,7 @@ import pytest
 from flask.testing import FlaskClient
 from unittest.mock import MagicMock, patch
 
-from app import app, DrinkListModel
-from test_drink_list_model import DrinkListModel
+from cocktail_maker.models.drink_list_model import DrinkListModel
 
 @pytest.fixture
 def mock_drink_list(mocker):

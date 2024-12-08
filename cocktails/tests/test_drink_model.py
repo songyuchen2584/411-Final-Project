@@ -9,10 +9,7 @@ from unittest.mock import MagicMock
 
 from cocktail_maker.models.drink_model import (
     Drink,
-    in_memory_data,
-    get_random_drink,
-    get_drink_by_name,
-    fetch_drinks_by_alcoholic
+    in_memory_data
 )
 
 @pytest.fixture
