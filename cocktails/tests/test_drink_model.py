@@ -22,87 +22,31 @@ def mock_redis_client(mocker):
 #
 ######################################################
 
-def test_get_meal_by_id_cache_hit(session, mock_redis_client):
-    """Test retrieving a meal by its ID from cache."""
-    # Create and add a meal to the database
-    Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
-    meal = Meals.query.one()
-
-    # Set up mock Redis client to simulate cache hit with encoded data
-    mock_redis_client.hgetall.return_value = {
-        "id".encode(): "1".encode(),
-        "meal".encode(): "Spaghetti".encode(),
-        "cuisine".encode(): "Italian".encode(),
-        "price".encode(): "12.5".encode(),
-        "difficulty".encode(): "MED".encode(),
-        "battles".encode(): "0".encode(),
-        "wins".encode(): "0".encode(),
-        "deleted".encode(): "False".encode(),
+def test_get_drink_by_name_cache_hit(mock_redis_client):
+    """
+    Test retrieving a drink by its name when the name-to-ID association is cached.
+    """
+    # Simulate cached data
+    cached_data = {
+        "id": 11007,
+        "name": "Margarita",
+        "category": "Ordinary Drink",
+        "alcoholic": "Alcoholic",
+        "glass": "Cocktail glass",
+        "instructions": "Rub the rim of the glass with lime juice and dip in salt...",
+        "ingredients": ["Tequila", "Triple sec", "Lime juice"],
+        "measures": ["1 1/2 oz", "1/2 oz", "1 oz"],
+        "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg",
     }
+    mock_redis_client.get.return_value = str(cached_data).encode()
 
-    # Call the method
-    result = Meals.get_meal_by_id(meal.id)
+    # Call the function
+    drink = get_drink_by_name("Margarita", redis_client=mock_redis_client)
 
-    # Assert Redis cache was accessed and the result is correct
-    mock_redis_client.hgetall.assert_called_once_with(f"meal_1")
-    assert result["meal"] == "Spaghetti"
-
-
-def test_get_meal_by_id_cache_miss(session, mock_redis_client):
-    """Test retrieving a meal by its ID when it is not in cache."""
-    # Create and add a meal to the database
-    Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
-    meal = Meals.query.one()
-
-    # Simulate cache miss by setting return_value to an empty dictionary
-    mock_redis_client.hgetall.return_value = {}
-
-    # Call the method
-    result = Meals.get_meal_by_id(meal.id)
-
-    # Assert Redis cache was accessed and data was subsequently cached with hset
-    mock_redis_client.hgetall.assert_called_once_with(f"meal_{meal.id}")
-    mock_redis_client.hset.assert_called_once_with(
-        f"meal_1",
-        mapping={
-            "id": "1",
-            "meal": "Spaghetti",
-            "cuisine": "Italian",
-            "price": "12.5",
-            "difficulty": "MED",
-            "battles": "0",
-            "wins": "0",
-            "deleted": "False",
-        }
-    )
-    assert result["meal"] == "Spaghetti"
-
-def test_get_meal_by_id_bad_id(session, mock_redis_client):
-    """Test retrieving a meal by an invalid ID."""
-
-    # Ensure the Redis client returns an empty dict to simulate a cache miss
-    mock_redis_client.hgetall.return_value = {}
-
-    with pytest.raises(ValueError, match="Meal 999 not found"):
-        Meals.get_meal_by_id(999)
-
-def test_get_meal_by_id_deleted(session, mock_redis_client):
-    """Test retrieving a meal that has been marked as deleted."""
-
-    # Set up the Redis client to return a deleted meal entry
-    mock_redis_client.hgetall.return_value = {
-        "id".encode(): "1".encode(),
-        "meal".encode(): "Spaghetti".encode(),
-        "cuisine".encode(): "Italian".encode(),
-        "price".encode(): "12.5".encode(),
-        "difficulty".encode(): "MED".encode(),
-        "battles".encode(): "10".encode(),
-        "wins".encode(): "5".encode(),
-        "deleted".encode(): "True".encode(),  # Simulate the meal being marked as deleted
-    }
-
-    with pytest.raises(ValueError, match="Meal 1 not found"):
-        Meals.get_meal_by_id(1)
+    # Assertions
+    assert drink.name == "Margarita"
+    assert drink.category == "Ordinary Drink"
+    mock_redis_client.get.assert_called_once_with("drink:margarita")
 
 def test_get_meal_by_name_cache_hit(session, mock_redis_client):
     """Test retrieving a meal by its name when the name-to-ID association is cached."""
