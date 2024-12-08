@@ -1,7 +1,9 @@
 import pytest
-
-from meal_max.models.user_model import Users
-
+from cocktail_maker.models.user_model import Users
+from cocktail_maker.db import db
+from app import create_app
+from config import TestConfig
+from flask.testing import FlaskClient
 
 @pytest.fixture
 def sample_user():
@@ -10,9 +12,14 @@ def sample_user():
         "password": "securepassword123"
     }
 
+@pytest.fixture
+def client(app) -> FlaskClient:
+    """Provide a test client for the Flask app."""
+    return app.test_client()
+
 
 ##########################################################
-# User Creation
+# Create Account
 ##########################################################
 
 def test_create_user(session, sample_user):
