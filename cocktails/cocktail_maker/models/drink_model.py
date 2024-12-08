@@ -7,6 +7,7 @@ from typing import Any, List
 from cocktail_maker.db import db
 from cocktail_maker.utils.logger import configure_logger
 from cocktail_maker.utils.random_utils import fetch_random_drink_data
+from cocktail_maker.utils.random_utils import fetch_drinks_by_alcoholic
 
 logger = logging.getLogger(__name__)
 configure_logger(logger)
@@ -64,47 +65,39 @@ class Drink():
     def get_random_drink() -> dict:
         """
         Fetch a random cocktail from the API and return it as a Drink object.
-    
+
         Returns:
-            Drink: A Drink dictionary representation containing the cocktail details.
-    
+            dict: A Drink dictionary representation containing the cocktail details.
+
         Raises:
-            Exception: If the API call fails or the response is invalid.
+            RuntimeError: If the API call fails or the response is invalid.
         """
         try:
             # Fetch data from the API
-            cocktail_data = fetch_random_drink_data() # API call for getting random drink is made in the fetch_random_drink_data() in random_utils
+            cocktail_data = fetch_random_drink_data()  # API call for getting random drink
             logger.debug("API response received: %s", cocktail_data)
-    
+
             # Parse the drink data from the API response
             drink_data = cocktail_data["drinks"][0]
             logger.info("Successfully fetched drink data: %s", drink_data.get("strDrink"))
-    
-            # Extract ingredients and measures
+
+            # Extract ingredients and measures (include None values)
             ingredients = [
-                drink_data[f"strIngredient{i}"]
-                for i in range(1, 16) if drink_data[f"strIngredient{i}"]
+                drink_data.get(f"strIngredient{i}") for i in range(1, 16)
             ]
             measures = [
-                drink_data[f"strMeasure{i}"]
-                for i in range(1, 16) if drink_data[f"strMeasure{i}"]
+                drink_data.get(f"strMeasure{i}") for i in range(1, 16)
             ]
-    
+
             # Log mismatches in ingredients and measures if any
             if len(ingredients) != len(measures):
                 logger.warning(
                     "Mismatch between ingredients and measures. Ingredients: %d, Measures: %d. "
-                    "Filling missing values with None.",
+                    "Ensuring alignment by including None values.",
                     len(ingredients),
                     len(measures),
                 )
-    
-                # Align the lengths of ingredients and measures
-                if len(ingredients) > len(measures):
-                    measures.extend([None] * (len(ingredients) - len(measures)))
-                elif len(measures) > len(ingredients):
-                    ingredients.extend([None] * (len(measures) - len(ingredients)))
-    
+
             # Create a Drink object
             drink = Drink(
                 id=int(drink_data["idDrink"]),
@@ -118,14 +111,14 @@ class Drink():
                 thumbnail=drink_data["strDrinkThumb"],
             )
             logger.info("Successfully created Drink object: %s", drink.name)
-    
+
             # Store the drink in memory
             in_memory_data[drink.name] = drink.to_dict()
             logger.info("Stored drink '%s' in memory.", drink.name)
 
             # Returns a dictionary representation of the Drink
             return drink.to_dict()
-    
+
         except Exception as e:
             logger.error("Error fetching random drink: %s", e)
             raise RuntimeError(f"Error fetching random drink: {e}")
@@ -134,20 +127,13 @@ class Drink():
     def get_drink_by_name(name: str) -> dict:
         """
         Fetches drinks by name from the CocktailDB API and returns a dictionary representation of a Drink.
-    
-        Args:
-            name (str): The name of the drink to search for.
-    
-        Returns:
-            Retrieve a drink by name. If the drink is not already stored in memory, fetch it from the API,
-            store it in memory, and return its details.
 
         Args:
-            name (str): The name of the drink to retrieve.
-    
+            name (str): The name of the drink to search for.
+
         Returns:
-            dict: A dictionary containing the details of the drink
-        
+            dict: A dictionary containing the details of the drink.
+
         Raises:
             ValueError: If no drinks are found for the given name or if the name input is invalid.
             RuntimeError: If the API request fails or returns an invalid response.
@@ -155,30 +141,28 @@ class Drink():
         # Check if the drink exists in memory
         if name in in_memory_data:
             return in_memory_data[name]
-    
+
         try:
             # Fetch from the API
             api_url = f"https://www.thecocktaildb.com/api/json/v1/1/search.php?s={name}"
             response = requests.get(api_url)
             response.raise_for_status()
             cocktail_data = response.json()
-    
+
             drinks = cocktail_data.get("drinks")
             if not drinks:
                 raise ValueError(f"Drink with name '{name}' not found")
-    
+
             drink_data = drinks[0]  # Assume the first drink matches
-    
-            # Extract ingredients and measures
+
+            # Extract ingredients and measures, ensuring lists have 15 slots
             ingredients = [
-                drink_data[f"strIngredient{i}"]
-                for i in range(1, 16) if drink_data[f"strIngredient{i}"]
+                drink_data.get(f"strIngredient{i}") for i in range(1, 16)
             ]
             measures = [
-                drink_data[f"strMeasure{i}"]
-                for i in range(1, 16) if drink_data[f"strMeasure{i}"]
+                drink_data.get(f"strMeasure{i}") for i in range(1, 16)
             ]
-    
+
             # Create a Drink object
             drink = Drink(
                 id=int(drink_data["idDrink"]),
@@ -191,23 +175,26 @@ class Drink():
                 measures=measures,
                 thumbnail=drink_data["strDrinkThumb"],
             )
-    
+
             # Store the drink in memory
             in_memory_data[drink.name] = drink.to_dict()
-            # Returns a dictionary representation of the Drink
+
+            # Return a dictionary representation of the Drink
             return drink.to_dict()
-    
+
         except requests.RequestException as e:
             logger.error("Failed to fetch drink by name '%s': %s", name, e)
             raise RuntimeError(f"Failed to fetch drink by name '{name}': {e}")
-    
+
         except ValueError as e:
             logger.warning("Drink not found: %s", e)
             raise
-    
+
         except Exception as e:
             logger.error("Unexpected error fetching drink by name: %s", e)
             raise RuntimeError(f"Unexpected error fetching drink by name: {e}")
+
+
 
     def is_drink_alcoholic(drink_name: str) -> bool:
         """
@@ -223,18 +210,18 @@ class Drink():
             ValueError: If the drink is not found or invalid data is returned.
             RuntimeError: If there is an issue with the API request.
         """
-        from cocktail_maker.utils.random_utils import fetch_drinks_by_alcoholic
 
         try:
-            # Fetch alcoholic drinks and check if the drink name is in the list
+            # Fetch alcoholic and non-alcoholic drinks
             alcoholic_drinks = fetch_drinks_by_alcoholic(alcoholic=True)
             non_alcoholic_drinks = fetch_drinks_by_alcoholic(alcoholic=False)
 
-            alcoholic_names = {drink["strDrink"].lower() for drink in alcoholic_drinks}
-            non_alcoholic_names = {drink["strDrink"].lower() for drink in non_alcoholic_drinks}
+            # Extract and standardize drink names for comparison
+            alcoholic_names = {drink["strDrink"].strip().lower() for drink in alcoholic_drinks}
+            non_alcoholic_names = {drink["strDrink"].strip().lower() for drink in non_alcoholic_drinks}
 
-            # Standardize the drink name for comparison
-            drink_name_lower = drink_name.lower()
+            # Standardize the input drink name
+            drink_name_lower = drink_name.strip().lower()
 
             if drink_name_lower in alcoholic_names:
                 return True  # It's alcoholic
@@ -243,6 +230,9 @@ class Drink():
             else:
                 raise ValueError(f"Drink '{drink_name}' not found in the API data.")
 
+        except ValueError as e:
+            logger.warning("Validation error: %s", e)
+            raise
         except Exception as e:
             logger.error("Error determining if drink '%s' is alcoholic: %s", drink_name, e)
             raise RuntimeError(f"Error determining if drink '{drink_name}' is alcoholic: {e}")
