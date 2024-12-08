@@ -16,6 +16,11 @@ from cocktail_maker.models.drink_model import (
 )
 
 @pytest.fixture
+def mock_fetch_drinks_by_alcoholic(mocker):
+    """Fixture to mock fetch_drinks_by_alcoholic API calls."""
+    return mocker.patch('cocktail_maker.utils.random_utils.fetch_drinks_by_alcoholic')
+
+@pytest.fixture
 def mock_fetch_random_drink_data(mocker):
     """
     Mock the fetch_random_drink_data function.
@@ -141,6 +146,38 @@ def test_get_drink_by_name_api_failure(mock_requests_get):
     # Call the method and assert an exception is raised
     with pytest.raises(RuntimeError, match="Failed to fetch drink by name 'Margarita'"):
         Drink.get_drink_by_name("Margarita")  
+
+
+#####################################################################################
+# tests for checking alcoholic
+##########################################################################################################
+
+def test_is_drink_alcoholic_true(mock_fetch_drinks_by_alcoholic):
+    """Test that a drink is correctly identified as alcoholic."""
+    # Mock API response for alcoholic drinks
+    mock_fetch_drinks_by_alcoholic.return_value = [{"strDrink": "Margarita"}, {"strDrink": "Old Fashioned"}]
+
+    result = Drink.is_drink_alcoholic("Margarita")
+    assert result is True
+
+
+def test_is_drink_alcoholic_false(mock_fetch_drinks_by_alcoholic):
+    """Test that a drink is correctly identified as non-alcoholic."""
+    # Mock API response for non-alcoholic drinks
+    mock_fetch_drinks_by_alcoholic.return_value = [{"strDrink": "Fruit Punch"}, {"strDrink": "Cranberry Punch"}]
+
+    result = Drink.is_drink_alcoholic("Fruit Punch")
+    assert result is False
+
+
+def test_is_drink_alcoholic_not_found(mock_fetch_drinks_by_alcoholic):
+    """Test the case when a drink is not found."""
+    # Mock API response: no drinks
+    mock_fetch_drinks_by_alcoholic.return_value = []
+
+    with pytest.raises(ValueError, match="not found"):
+        Drink.is_drink_alcoholic("Unknown Drink")
+
 
 
 #######################################################################################################

@@ -211,3 +211,40 @@ class Drink():
             logger.error("Unexpected error fetching drink by name: %s", e)
             raise RuntimeError(f"Unexpected error fetching drink by name: {e}")
 
+    def is_drink_alcoholic(drink_name: str) -> bool:
+        """
+        Check if a drink is alcoholic based on its name by fetching its details from the CocktailDB API.
+
+        Args:
+            drink_name (str): The name of the drink to check.
+
+        Returns:
+            bool: True if the drink is alcoholic, False if it is non-alcoholic.
+
+        Raises:
+            ValueError: If the drink is not found or invalid data is returned.
+            RuntimeError: If there is an issue with the API request.
+        """
+        from cocktail_maker.utils.random_utils import fetch_drinks_by_alcoholic
+
+        try:
+            # Fetch alcoholic drinks and check if the drink name is in the list
+            alcoholic_drinks = fetch_drinks_by_alcoholic(alcoholic=True)
+            non_alcoholic_drinks = fetch_drinks_by_alcoholic(alcoholic=False)
+
+            alcoholic_names = {drink["strDrink"].lower() for drink in alcoholic_drinks}
+            non_alcoholic_names = {drink["strDrink"].lower() for drink in non_alcoholic_drinks}
+
+            # Standardize the drink name for comparison
+            drink_name_lower = drink_name.lower()
+
+            if drink_name_lower in alcoholic_names:
+                return True  # It's alcoholic
+            elif drink_name_lower in non_alcoholic_names:
+                return False  # It's non-alcoholic
+            else:
+                raise ValueError(f"Drink '{drink_name}' not found in the API data.")
+
+        except Exception as e:
+            logger.error("Error determining if drink '%s' is alcoholic: %s", drink_name, e)
+            raise RuntimeError(f"Error determining if drink '{drink_name}' is alcoholic: {e}")

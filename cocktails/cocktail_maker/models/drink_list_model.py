@@ -2,6 +2,10 @@ import requests
 from cocktail_maker.models.drink_model import Drink
 from typing import Optional, List
 
+from cocktail_maker.utils.logger import configure_logger
+logger = logging.getLogger(__name__)
+configure_logger(logger)
+
 class DrinkListModel:
     def __init__(self):
         self.drinks = []
@@ -58,3 +62,38 @@ class DrinkListModel:
 
         return drink_names
     
+    def count_alcoholic_drinks(drink_names: List[str]) -> int:
+        """
+        Count the number of alcoholic drinks in a list of drink names.
+
+        Args:
+            drink_names (List[str]): A list of drink names to check.
+
+        Returns:
+            int: The count of alcoholic drinks.
+
+        Raises:
+            RuntimeError: If there is an error checking drink data.
+        """
+        try:
+            # Use the Drink class's is_drink_alcoholic function for each drink
+            count = 0
+            for name in drink_names:
+                try:
+                    if Drink.is_drink_alcoholic(name):
+                        count += 1
+                except ValueError:
+                    logger.warning("Skipping drink '%s' as it was not found.", name)
+                except Exception as e:
+                    logger.error("Error checking drink '%s': %s", name, e)
+                    raise RuntimeError(f"Error checking drink '{name}': {e}")
+            
+            logger.info(
+                "Counted %d alcoholic drinks in the provided list of %d drinks.",
+                count, len(drink_names)
+            )
+            return count
+
+        except Exception as e:
+            logger.error("Error counting alcoholic drinks: %s", e)
+            raise RuntimeError(f"Error counting alcoholic drinks: {e}")

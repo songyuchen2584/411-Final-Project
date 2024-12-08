@@ -14,6 +14,11 @@ def mock_drink_list(mocker):
 def client() -> FlaskClient:
     return app.test_client()
 
+@pytest.fixture
+def mock_fetch_drinks_by_alcoholic(mocker):
+    """Fixture to mock fetch_drinks_by_alcoholic API calls."""
+    return mocker.patch('cocktail_maker.utils.random_utils.fetch_drinks_by_alcoholic')
+
 
 def test_add_drink(client, mock_drink_list):
     """Test the add drink API."""
@@ -111,4 +116,43 @@ def test_list_drinks_error(client, mocker):
     json_data = response.get_json()
     assert json_data['error'] == 'Failed to retrieve drinks'
 
+#################################################################################################
+# tests for counting alcoholic drinks
+#################################################################################################
+def test_count_alcoholic_drinks(mock_fetch_drinks_by_alcoholic):
+    """Test counting the number of alcoholic drinks in a list."""
+    # Mock API response for alcoholic drinks
+    mock_fetch_drinks_by_alcoholic.return_value = [{"strDrink": "Margarita"}, {"strDrink": "Old Fashioned"}]
 
+    drink_list = ["Margarita", "Fruit Punch", "Old Fashioned", "Cranberry Punch", "Mojito"]
+
+    # Mock `Drink.is_drink_alcoholic`
+    with patch('cocktail_maker.models.drink.Drink.is_drink_alcoholic') as mock_is_alcoholic:
+        mock_is_alcoholic.side_effect = lambda name: name in ["Margarita", "Old Fashioned"]
+
+        result = DrinkList.count_alcoholic_drinks(drink_list)
+        assert result == 2
+
+
+def test_count_alcoholic_drinks_with_errors(mock_fetch_drinks_by_alcoholic):
+    """Test counting alcoholic drinks when some drinks are not found."""
+    # Mock `Drink.is_drink_alcoholic` to raise errors for unknown drinks
+    with patch('cocktail_maker.models.drink.Drink.is_drink_alcoholic') as mock_is_alcoholic:
+        def mock_side_effect(name):
+            if name == "Unknown Drink":
+                raise ValueError("Drink not found")
+            return name in ["Margarita", "Old Fashioned"]
+
+        mock_is_alcoholic.side_effect = mock_side_effect
+
+        drink_list = ["Margarita", "Unknown Drink", "Old Fashioned", "Cranberry Punch"]
+        result = DrinkList.count_alcoholic_drinks(drink_list)
+        assert result == 2
+
+
+def test_count_alcoholic_drinks_empty_list():
+    """Test counting alcoholic drinks when the drink list is empty."""
+    result = DrinkList.count_alcoholic_drinks([])
+    assert result == 0
+
+#################################################################################################
