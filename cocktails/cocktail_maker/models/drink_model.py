@@ -11,9 +11,11 @@ from cocktail_maker.db import db
 from cocktail_maker.utils.logger import configure_logger
 from cocktail_maker.utils.random_utils import get_random
 
+logger = logging.getLogger(__name__)
+configure_logger(logger)
 
 @dataclass
-class Drink(db.Model):
+class Drink():
     __tablename__ = 'cocktails'
     
     id: int
@@ -58,15 +60,14 @@ class Drink(db.Model):
             raise ValueError(
                 f"Invalid category '{self.category}'. Must be one of {', '.join(self.VALID_CATEGORIES)}."
             )
-
-    @classmethod
-    def get_random_drink() -> "Drinks":
+    
+    def get_random_drink() -> Drink:
         """
-        Fetch a random cocktail from the API and save it to the database if it doesn't already exist.
+        Fetch a random cocktail from the API and return it as a Drink object.
     
         Returns:
-            Drinks: A new or existing Drinks object containing the random cocktail details.
-        
+            Drink: A Drink object containing the cocktail details.
+    
         Raises:
             Exception: If the API call fails or the response is invalid.
         """
@@ -84,37 +85,37 @@ class Drink(db.Model):
                 raise ValueError("No drinks found in API response")
     
             drink = drinks[0]  # Only one drink is returned
-            drink_data = {
-                "name": drink["strDrink"],
-                "category": drink["strCategory"],
-                "glass": drink["strGlass"],
-                "instructions": drink["strInstructions"],
-                "ingredients": ", ".join(
-                    [drink[f"strIngredient{i}"] for i in range(1, 16) if drink[f"strIngredient{i}"]]
-                ),
-            }
     
-            # Save to the database or return an existing object
-            existing_drink = Drinks.query.filter_by(name=drink_data["name"]).first()
-            if existing_drink:
-                logger.info("Drink already exists in the database: %s", drink_data["name"])
-                return existing_drink
-            else:
-                # Create and save a new drink
-                new_drink = Drinks(
-                    name=drink_data["name"],
-                    category=drink_data["category"],
-                    glass=drink_data["glass"],
-                    instructions=drink_data["instructions"],
-                    ingredients=drink_data["ingredients"]
-                )
-                db.session.add(new_drink)
-                db.session.commit()
-                logger.info("New drink added to the database: %s", drink_data["name"])
-                return new_drink
+            # Extract ingredients and measures
+            ingredients = [
+                drink[f"strIngredient{i}"]
+                for i in range(1, 16)
+                if drink[f"strIngredient{i}"]
+            ]
+            measures = [
+                drink[f"strMeasure{i}"] or ""  # Use an empty string if measure is null
+                for i in range(1, 16)
+                if drink[f"strIngredient{i}"]
+            ]
+    
+            # Create a Drink object
+            new_drink = Drink(
+                id=int(drink["idDrink"]),
+                name=drink["strDrink"],
+                category=drink["strCategory"],
+                alcoholic=drink["strAlcoholic"],
+                glass=drink["strGlass"],
+                instructions=drink["strInstructions"],
+                ingredients=ingredients,
+                measures=measures,
+                thumbnail=drink["strDrinkThumb"],
+            )
+    
+            logger.info("Random drink retrieved successfully: %s", new_drink.name)
+            return new_drink
     
         except requests.RequestException as e:
-            logger.error("Failed to fetch random drink: %s", e)
+            logger.error("Failed to fetch random cocktail: %s", e)
             raise
         except Exception as e:
             logger.error("Error processing API response: %s", e)
