@@ -38,6 +38,18 @@ def test_create_account_duplicate_user(client, session, sample_user):
     json_data = response2.get_json()
     assert json_data["error"] == f"User with username '{sample_user['username']}' already exists"
 
+def test_create_account_rollback_on_error(client, session, sample_user):
+    """Test that the database rolls back properly on account creation errors."""
+    # Create a valid user
+    client.post("/create-account", json=sample_user)
+    
+    # Try creating the same user again
+    response = client.post("/create-account", json=sample_user)
+    assert response.status_code == 400
+
+    # Verify that no duplicate users exist in the database
+    users = session.query(Users).filter_by(username=sample_user["username"]).all()
+    assert len(users) == 1, "There should be only one user in the database after rollback"
 
 def test_create_account_missing_fields(client):
     """Test creating an account with missing fields."""
@@ -84,18 +96,24 @@ def test_login_user_not_found(client):
 def test_update_password_success(client, session, sample_user):
     """Test updating the password for an existing user."""
     client.post("/create-account", json=sample_user)
-    new_password = "newsecurepassword123"
+    old_user = session.query(Users).filter_by(username=sample_user["username"]).first()
 
+    new_password = "newsecurepassword123"
     response = client.post("/update-password", json={"username": sample_user["username"], "new_password": new_password})
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data["message"] == "Password updated successfully"
 
-    # Verify the new password is correct
+    # Verify the new password works
     assert Users.check_password(sample_user["username"], new_password) is True
 
     # Ensure the old password no longer works
     assert Users.check_password(sample_user["username"], sample_user["password"]) is False
+
+    # Verify the salt is updated
+    updated_user = session.query(Users).filter_by(username=sample_user["username"]).first()
+    assert updated_user.salt != old_user.salt, "Salt should change after password update"
+    assert updated_user.password != old_user.password, "Password hash should change after password update"
 
 
 def test_update_password_user_not_found(client):
