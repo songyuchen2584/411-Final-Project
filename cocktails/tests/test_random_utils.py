@@ -1,7 +1,7 @@
 import pytest
 import requests
 
-from meal_max.utils.random_utils import get_random
+from cocktail_maker.utils.random_utils import fetch_random_drink_data
 
 
 RANDOM_NUMBER = 0.42
