@@ -6,6 +6,16 @@ from config import TestConfig
 from flask.testing import FlaskClient
 
 @pytest.fixture
+def app():
+    """Create a test app using TestConfig."""
+    app = create_app(config_class=TestConfig)  # Pass TestConfig
+    with app.app_context():
+        db.create_all()  # Create tables in in-memory database
+        yield app
+        db.session.remove()
+        db.drop_all()  # Drop all tables after tests
+
+@pytest.fixture
 def sample_user():
     return {
         "username": "testuser",
