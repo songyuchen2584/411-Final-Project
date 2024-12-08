@@ -16,109 +16,132 @@ from cocktail_maker.models.drink_model import (
 )
 
 @pytest.fixture
-def mock_redis_client(mocker):
-    return mocker.patch('cocktail_maker.models.drink_model.redis_client')
-
-######################################################
-#
-#    Getting drinks
-#
-######################################################
-
-# Mocking data
-mock_successful_response = {
-    "drinks": [
-        {
-            "idDrink": "11007",
-            "strDrink": "Margarita",
-            "strCategory": "Ordinary Drink",
-            "strAlcoholic": "Alcoholic",
-            "strGlass": "Cocktail glass",
-            "strInstructions": "Rub the rim of the glass...",
-            "strIngredient1": "Tequila",
-            "strIngredient2": "Triple sec",
-            "strIngredient3": "Lime juice",
-            "strIngredient4": "Salt",
-            "strIngredient5": None,
-            "strMeasure1": "1 1/2 oz",
-            "strMeasure2": "1/2 oz",
-            "strMeasure3": "1 oz",
-            "strMeasure4": None,
-            "strMeasure5": None,
-            "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg",
-        }
-    ]
-}
-
-mock_invalid_response = {"drinks": None}
-mock_malformed_response = {}
-
-# Test function
-def test_get_random_drink_success():
-    """Test successful fetching of a random drink."""
-    # Mock API call
-    def mock_fetch_function():
-        return mock_successful_response
-
-    drink = Drink.get_random_drink(api_fetch_function=mock_fetch_function)
-
-    # Assertions
-    assert drink["name"] == "Margarita"
-    assert drink["category"] == "Ordinary Drink"
-    assert drink["ingredients"] == ["Tequila", "Triple sec", "Lime juice", "Salt"]
-    assert drink["measures"] == ["1 1/2 oz", "1/2 oz", "1 oz", None]
-
-def test_get_random_drink_api_failure():
-    """Test API call failure."""
-    def mock_fetch_function():
-        raise requests.RequestException("API error")
-
-    with pytest.raises(RuntimeError, match="Error fetching random drink: API error"):
-        Drink.get_random_drink(api_fetch_function=mock_fetch_function)
-
-def test_get_random_drink_invalid_response():
-    """Test invalid API response."""
-    def mock_fetch_function():
-        return mock_invalid_response
-
-    with pytest.raises(RuntimeError, match="Error fetching random drink: 'NoneType' object is not subscriptable"):
-        Drink.get_random_drink(api_fetch_function=mock_fetch_function)
-
-def test_get_random_drink_malformed_response():
-    """Test malformed API response."""
-    def mock_fetch_function():
-        return mock_malformed_response
-
-    with pytest.raises(RuntimeError, match="Error fetching random drink: 'drinks'"):
-        Drink.get_random_drink(api_fetch_function=mock_fetch_function)
-
-
-
-def test_get_drink_by_name_cache_hit(mock_redis_client):
+def mock_fetch_random_drink_data(mocker):
     """
-    Test retrieving a drink by its name when the name-to-ID association is cached.
+    Mock the fetch_random_drink_data function.
     """
-    # Simulate cached data
-    cached_data = {
-        "id": 11007,
-        "name": "Margarita",
-        "category": "Ordinary Drink",
-        "alcoholic": "Alcoholic",
-        "glass": "Cocktail glass",
-        "instructions": "Rub the rim of the glass with lime juice and dip in salt...",
-        "ingredients": ["Tequila", "Triple sec", "Lime juice"],
-        "measures": ["1 1/2 oz", "1/2 oz", "1 oz"],
-        "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg",
+    mock = mocker.patch("cocktail_maker.utils.random_utils.fetch_random_drink_data")
+    return mock
+
+@pytest.fixture
+def mock_requests_get(mocker):
+    """
+    Mock the requests.get function.
+    """
+    mock = mocker.patch("requests.get")
+    return mock
+
+def test_get_random_drink_success(mock_fetch_random_drink_data):
+    """Test get_random_drink with a successful API call."""
+    # Mock API response
+    mock_fetch_random_drink_data.return_value = {
+        "drinks": [
+            {
+                "idDrink": "11007",
+                "strDrink": "Margarita",
+                "strCategory": "Ordinary Drink",
+                "strAlcoholic": "Alcoholic",
+                "strGlass": "Cocktail glass",
+                "strInstructions": "Rub the rim of the glass...",
+                "strIngredient1": "Tequila",
+                "strIngredient2": "Triple sec",
+                "strIngredient3": "Lime juice",
+                "strIngredient4": "Salt",
+                "strIngredient5": None,
+                "strMeasure1": "1 1/2 oz",
+                "strMeasure2": "1/2 oz",
+                "strMeasure3": "1 oz",
+                "strMeasure4": None,
+                "strMeasure5": None,
+                "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg",
+            }
+        ]
     }
-    mock_redis_client.get.return_value = str(cached_data).encode()
 
-    # Call the function
-    drink = get_drink_by_name("Margarita", redis_client=mock_redis_client)
+    # Call the method
+    drink_data = Drink.get_random_drink()
 
-    # Assertions
-    assert drink.name == "Margarita"
-    assert drink.category == "Ordinary Drink"
-    mock_redis_client.get.assert_called_once_with("drink:margarita")
+    # Assert the data is processed correctly
+    assert drink_data["name"] == "Margarita"
+    assert drink_data["ingredients"] == ["Tequila", "Triple sec", "Lime juice", "Salt"]
+    assert drink_data["measures"] == ["1 1/2 oz", "1/2 oz", "1 oz", None]
+    assert drink_data["thumbnail"] == "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+    # Assert the drink is stored in memory
+    assert "Margarita" in in_memory_data
+    assert in_memory_data["Margarita"]["name"] == "Margarita"
+
+def test_get_random_drink_api_failure(mock_fetch_random_drink_data):
+    """Test get_random_drink when the API call fails."""
+    # Simulate API failure
+    mock_fetch_random_drink_data.side_effect = RuntimeError("API error")
+
+    # Call the method and assert an exception is raised
+    with pytest.raises(RuntimeError, match="Error fetching random drink: API error"):
+        Drink.get_random_drink()
+
+def test_get_drink_by_name_success(mock_requests_get):
+    """Test get_drink_by_name with a successful API call."""
+    # Mock API response
+    mock_requests_get.return_value.json.return_value = {
+        "drinks": [
+            {
+                "idDrink": "11007",
+                "strDrink": "Margarita",
+                "strCategory": "Ordinary Drink",
+                "strAlcoholic": "Alcoholic",
+                "strGlass": "Cocktail glass",
+                "strInstructions": "Rub the rim of the glass...",
+                "strIngredient1": "Tequila",
+                "strIngredient2": "Triple sec",
+                "strIngredient3": "Lime juice",
+                "strIngredient4": "Salt",
+                "strIngredient5": None,
+                "strMeasure1": "1 1/2 oz",
+                "strMeasure2": "1/2 oz",
+                "strMeasure3": "1 oz",
+                "strMeasure4": None,
+                "strMeasure5": None,
+                "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg",
+            }
+        ]
+    }
+
+    # Call the method
+    drink_data = Drink.get_drink_by_name("Margarita")
+
+    # Assert the data is processed correctly
+    assert drink_data["name"] == "Margarita"
+    assert drink_data["ingredients"] == ["Tequila", "Triple sec", "Lime juice", "Salt"]
+    assert drink_data["measures"] == ["1 oz", "0.5 oz", "1 oz", None]
+    assert drink_data["thumbnail"] == "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+    # Assert the drink is stored in memory
+    assert "Margarita" in in_memory_data
+    assert in_memory_data["Margarita"]["name"] == "Margarita"
+
+
+def test_get_drink_by_name_not_found(mock_requests_get):
+    """Test get_drink_by_name when the drink is not found."""
+    # Mock API response for not found
+    mock_requests_get.return_value.json.return_value = {"drinks": None}
+
+    # Call the method and assert an exception is raised
+    with pytest.raises(ValueError, match="Drink with name 'NonexistentDrink' not found"):
+        Drink.get_drink_by_name("NonexistentDrink")
+
+
+def test_get_drink_by_name_api_failure(mock_requests_get):
+    """Test get_drink_by_name when the API call fails."""
+    # Simulate API failure
+    mock_requests_get.side_effect = requests.RequestException("API error")
+
+    # Call the method and assert an exception is raised
+    with pytest.raises(RuntimeError, match="Failed to fetch drink by name 'Margarita'"):
+        Drink.get_drink_by_name("Margarita")  
+
+
+#######################################################################################################
 
 def test_get_meal_by_name_cache_hit(session, mock_redis_client):
     """Test retrieving a meal by its name when the name-to-ID association is cached."""
