@@ -68,8 +68,6 @@ def create_app(config_class=ProductionConfig):
         
         except ValueError as e:
             return make_response(jsonify({'error': str(e)}), 400)
-        except ValueError as e:
-            return make_response(jsonify({'error': str(e)}), 400)
 
         
     @app.route('/api/list-drinks', methods=['GET'])
