@@ -1,77 +1,26 @@
 from dataclasses import asdict
+from contextlib import contextmanager
+import re
+import sqlite3
 
 import pytest
 
-from meal_max.models.kitchen_model import Meals
+from cocktail_maker.models.drink_model import (
+    Drink,
+    #######ADD FUNCTIONS##########
+    get_random_drink,
+    get_drink_by_name,
+)
 
 @pytest.fixture
 def mock_redis_client(mocker):
-    return mocker.patch('meal_max.models.kitchen_model.redis_client')
+    return mocker.patch('cocktail_maker.models.drink_model.redis_client')
 
 ######################################################
 #
-#    Add and delete
+#    Get drinks
 #
 ######################################################
-
-def test_add_meal(session):
-    """Test adding a meal to the database."""
-    meal = Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
-
-    # Query back the meal to check it was added
-    result = Meals.query.one()
-    assert result.meal == "Spaghetti"
-    assert result.cuisine == "Italian"
-    assert result.price == 12.5
-    assert result.difficulty == "MED"
-
-def test_add_meal_invalid_price():
-    """Test error when trying to create a meal with an invalid price (negative or zero)."""
-    with pytest.raises(ValueError, match="Invalid price: -12.5. Price must be a positive number."):
-        Meals.create_meal("Spaghetti", "Italian", -12.5, "MED")
-
-    with pytest.raises(ValueError, match="Invalid price: 0. Price must be a positive number."):
-        Meals.create_meal("Spaghetti", "Italian", 0, "MED")
-
-def test_add_meal_invalid_difficulty():
-    """Test error when trying to create a meal with an invalid difficulty level."""
-    with pytest.raises(ValueError, match="Invalid difficulty level: VERY_HARD. Must be 'LOW', 'MED', or 'HIGH'."):
-        Meals.create_meal("Spaghetti", "Italian", 12.5, "VERY_HARD")
-
-def test_add_meal_duplicate_name(session):
-    """Test adding a meal with a duplicate name."""
-    Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
-    with pytest.raises(ValueError, match="Meal with name 'Spaghetti' already exists"):
-        # Attempt to create a duplicate meal
-        Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
-        session.rollback()  # Rollback the transaction to clean up
-
-def test_delete_meal(session, mock_redis_client):
-    """Test soft deleting a meal by marking it as deleted."""
-    Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
-    meal = Meals.query.one()
-    Meals.delete_meal(meal.id)
-
-    # Fetch the meal to confirm it's marked as deleted
-    result = session.get(Meals, 1)
-    assert result.deleted is True
-
-def test_delete_meal_triggers_cache_delete(session, mock_redis_client):
-    """Test that deleting a meal triggers cache removal in Redis."""
-    # Create and add a meal
-    Meals.create_meal("Spaghetti", "Italian", 12.5, "MED")
-    meal = session.get(Meals, 1)
-
-    # Delete the meal
-    Meals.delete_meal(meal.id)
-
-    # Check that the Redis cache entry was deleted
-    mock_redis_client.delete.assert_called_once_with(f"meal:{meal.id}")
-
-def test_delete_meal_bad_id(session):
-    """Test deleting a meal that does not exist."""
-    with pytest.raises(ValueError, match="Meal 999 not found"):
-        Meals.delete_meal(999)
 
 def test_get_meal_by_id_cache_hit(session, mock_redis_client):
     """Test retrieving a meal by its ID from cache."""
