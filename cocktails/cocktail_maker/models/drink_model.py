@@ -71,56 +71,54 @@ class Drink():
         Raises:
             Exception: If the API call fails or the response is invalid.
         """
-        api_url = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
-    
+
         try:
-            # Make the API request
-            response = requests.get(api_url)
-            response.raise_for_status()  # Raise an HTTPError for bad responses
-            cocktail_data = response.json()
+            # Fetch random drink data using the fetch_random_drink_data function
+            cocktail_data = fetch_random_drink_data()
     
-            # Parse API response
-            drinks = cocktail_data.get("drinks")
-            if not drinks:
-                raise ValueError("No drinks found in API response")
-    
-            drink = drinks[0]  # Only one drink is returned
+            # Parse the drink information from the API response
+            drink_data = cocktail_data["drinks"][0]  # The API always returns a list with one drink
     
             # Extract ingredients and measures
             ingredients = [
-                drink[f"strIngredient{i}"]
-                for i in range(1, 16)
-                if drink[f"strIngredient{i}"]
+                drink_data[f"strIngredient{i}"]
+                for i in range(1, 16) if drink_data[f"strIngredient{i}"]
             ]
             measures = [
-                drink[f"strMeasure{i}"] or ""  # Use an empty string if measure is null
-                for i in range(1, 16)
-                if drink[f"strIngredient{i}"]
+                drink_data[f"strMeasure{i}"]
+                for i in range(1, 16) if drink_data[f"strMeasure{i}"]
             ]
     
+            # Ensure ingredients and measures are of the same length
+            if len(ingredients) != len(measures):
+                logger.warning("Mismatch between ingredients and measures. Filling missing values with None.")
+                if len(ingredients) > len(measures):
+                    measures.extend([None] * (len(ingredients) - len(measures)))
+                elif len(measures) > len(ingredients):
+                    ingredients.extend([None] * (len(measures) - len(ingredients)))
+    
             # Create a Drink object
-            new_drink = Drink(
-                id=int(drink["idDrink"]),
-                name=drink["strDrink"],
-                category=drink["strCategory"],
-                alcoholic=drink["strAlcoholic"],
-                glass=drink["strGlass"],
-                instructions=drink["strInstructions"],
+            drink = Drink(
+                id=int(drink_data["idDrink"]),
+                name=drink_data["strDrink"],
+                category=drink_data["strCategory"],
+                alcoholic=drink_data["strAlcoholic"],
+                glass=drink_data["strGlass"],
+                instructions=drink_data["strInstructions"],
                 ingredients=ingredients,
                 measures=measures,
-                thumbnail=drink["strDrinkThumb"],
+                thumbnail=drink_data["strDrinkThumb"],
             )
     
-            logger.info("Random drink retrieved successfully: %s", new_drink.name)
-            return new_drink
+            logger.info("Successfully created Drink object: %s", drink.name)
+            return drink
     
-        except requests.RequestException as e:
-            logger.error("Failed to fetch random cocktail: %s", e)
+        except RuntimeError as e:
+            logger.error("Error fetching or processing random drink: %s", e)
             raise
         except Exception as e:
-            logger.error("Error processing API response: %s", e)
-            raise
-
+            logger.error("Unexpected error in get_random_drink: %s", e)
+            raise RuntimeError(f"Unexpected error in get_random_drink: {e}")
 
     def update_cache_for_cocktail(mapper, connection, target):
         """
