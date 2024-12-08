@@ -76,7 +76,7 @@ class Drink():
         """
         try:
             # Fetch data from the API
-            cocktail_data = fetch_random_drink_data()
+            cocktail_data = fetch_random_drink_data() # API call for getting random drink is made in the fetch_random_drink_data() in random_utils
             logger.debug("API response received: %s", cocktail_data)
     
             # Parse the drink data from the API response
