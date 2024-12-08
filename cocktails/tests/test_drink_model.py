@@ -31,6 +31,8 @@ def mock_requests_get(mocker):
     mock = mocker.patch("requests.get")
     return mock
 
+################# Get Drinks #################
+
 def test_get_random_drink_success(mock_fetch_random_drink_data):
     """Test get_random_drink with a successful API call."""
     # Mock API response
