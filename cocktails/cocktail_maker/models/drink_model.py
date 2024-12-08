@@ -14,6 +14,9 @@ from cocktail_maker.utils.random_utils import fetch_random_drink_data
 logger = logging.getLogger(__name__)
 configure_logger(logger)
 
+# In-memory storage for drinks
+in_memory_data = {}
+
 @dataclass
 class Drink():
     __tablename__ = 'cocktails'
