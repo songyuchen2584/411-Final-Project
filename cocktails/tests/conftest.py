@@ -1,6 +1,6 @@
 import pytest
 
-from cocktail_maker.app import create_app
+from app import create_app
 from cocktail_maker.db import db
 from config import TestConfig
 

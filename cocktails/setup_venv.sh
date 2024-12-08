@@ -1,15 +1,30 @@
 #!/bin/bash
 
 # Set the name of the virtual environment directory
-VENV_DIR="drink_venv"
+VENV_DIR="cocktail_maker_venv"
 REQUIREMENTS_FILE="requirements.lock"
+
+# Function to activate the virtual environment
+activate_venv() {
+  if [ -f "$VENV_DIR/bin/activate" ]; then
+    # Linux/Mac
+    source "$VENV_DIR/bin/activate"
+  elif [ -f "$VENV_DIR/Scripts/activate" ]; then
+    # Windows
+    source "$VENV_DIR/Scripts/activate"
+  else
+    echo "Error: Could not find the activate script."
+    exit 1
+  fi
+}
 
 # Check if the virtual environment already exists
 if [ ! -d "$VENV_DIR" ]; then
   echo "Creating virtual environment..."
   python -m venv "$VENV_DIR"
 
-  source "$VENV_DIR/bin/activate"
+  # Activate the virtual environment
+  activate_venv
 
   # Install dependencies from requirements.lock if it exists
   if [ -f "$REQUIREMENTS_FILE" ]; then
@@ -20,6 +35,7 @@ if [ ! -d "$VENV_DIR" ]; then
     exit 1
   fi
 else
-  source "$VENV_DIR/bin/activate"
+  # Activate the virtual environment
+  activate_venv
   echo "Virtual environment already exists. Activated."
 fi
