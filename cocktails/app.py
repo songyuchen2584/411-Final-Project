@@ -153,13 +153,15 @@ def create_app(config_class=ProductionConfig):
     #
     ####################################################
 
+    drink_model = Drink()
+
     @app.route('/api/random-drink', methods=['GET'])
     def fetch_random_drink():
         """
         Fetch a random drink from the CocktailDB API.
         """
         try:
-            random_drink = get_random_drink()
+            random_drink = drink_model.get_random_drink()
             return jsonify({'status': 'success', 'drink': random_drink}), 200
         except RuntimeError as e:
             app.logger.error("Failed to fetch random drink: %s", e)
@@ -171,7 +173,7 @@ def create_app(config_class=ProductionConfig):
         Fetch a drink by name from the CocktailDB API.
         """
         try:
-            drink = get_drink_by_name(drink_name)
+            drink = drink_model.get_drink_by_name(drink_name)
             return jsonify({'status': 'success', 'drink': drink}), 200
         except ValueError as e:
             app.logger.warning("Drink not found: %s", e)
@@ -186,7 +188,7 @@ def create_app(config_class=ProductionConfig):
         Check if a drink is alcoholic based on its name.
         """
         try:
-            is_alcoholic = is_drink_alcoholic(drink_name)
+            is_alcoholic = drink_model.is_drink_alcoholic(drink_name)
             return jsonify({'status': 'success', 'is_alcoholic': is_alcoholic}), 200
         except ValueError as e:
             app.logger.warning("Drink not found or invalid data: %s", e)
