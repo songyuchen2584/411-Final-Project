@@ -73,7 +73,7 @@ class Drink():
         """
 
         try:
-            # Fetch random drink data using the fetch_random_drink_data function
+            # Fetch random drink data using the fetch_random_drink_data function which calls the random drink API
             cocktail_data = fetch_random_drink_data()
     
             # Parse the drink information from the API response
@@ -120,6 +120,86 @@ class Drink():
             logger.error("Unexpected error in get_random_drink: %s", e)
             raise RuntimeError(f"Unexpected error in get_random_drink: {e}")
 
+    def get_drink_by_name(name: str) -> List[Drink]:
+        """
+        Fetches drinks by name from the CocktailDB API and returns a list of Drink objects.
+    
+        Args:
+            name (str): The name of the drink to search for.
+    
+        Returns:
+            List[Drink]: A list of Drink objects for all drinks matching the name.
+    
+        Raises:
+            ValueError: If no drinks are found for the given name or if the name input is invalid.
+            RuntimeError: If the API request fails or returns an invalid response.
+        """
+        # Validate the input name
+        if not name or not name.strip():
+            raise ValueError("The drink name cannot be empty or whitespace.")
+    
+        api_url = f"https://www.thecocktaildb.com/api/json/v1/1/search.php?s={name}"
+    
+        try:
+            # Log the API request
+            logger.info("Fetching drink by name from %s", api_url)
+    
+            # Send GET request
+            response = requests.get(api_url, timeout=5)
+            response.raise_for_status()
+    
+            # Parse the API response
+            drink_data = response.json()
+            drinks = drink_data.get("drinks")
+    
+            if not drinks:
+                logger.info("No drinks found for name: %s", name)
+                raise ValueError(f"No drinks found for the given name '{name}'. Please try a different name.")
+    
+            # Process each drink into a Drink object
+            drink_objects = []
+            for drink in drinks:
+                ingredients = [
+                    drink[f"strIngredient{i}"]
+                    for i in range(1, 16)
+                    if drink[f"strIngredient{i}"]
+                ]
+                measures = [
+                    drink[f"strMeasure{i}"]
+                    for i in range(1, 16)
+                    if drink[f"strIngredient{i}"]
+                ]
+                drink_objects.append(Drink(
+                    id=int(drink["idDrink"]),
+                    name=drink["strDrink"],
+                    category=drink["strCategory"],
+                    alcoholic=drink["strAlcoholic"],
+                    glass=drink["strGlass"],
+                    instructions=drink["strInstructions"],
+                    ingredients=ingredients,
+                    measures=measures,
+                    thumbnail=drink["strDrinkThumb"],
+                ))
+    
+            logger.info("Successfully fetched %d drinks for name '%s'", len(drink_objects), name)
+            return drink_objects
+    
+        except requests.exceptions.Timeout:
+            logger.error("Request to fetch drink by name timed out.")
+            raise RuntimeError("Request to fetch drink by name timed out.")
+    
+        except requests.RequestException as e:
+            logger.error("Failed to fetch drink by name: %s", e)
+            raise RuntimeError(f"Failed to fetch drink by name: {e}")
+    
+        except ValueError as ve:
+            logger.error("ValueError encountered: %s", ve)
+            raise
+    
+        except Exception as e:
+            logger.error("Unexpected error while fetching drink by name: %s", e)
+            raise RuntimeError(f"Unexpected error while processing drink by name: {e}")
+    
     def update_cache_for_cocktail(mapper, connection, target):
         """
         Update the Redis cache for a cocktail entry after an update or delete operation.
