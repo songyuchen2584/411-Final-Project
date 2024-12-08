@@ -5,6 +5,7 @@ from app import create_app
 from config import TestConfig
 from flask.testing import FlaskClient
 
+
 @pytest.fixture
 def app():
     """Create a test app using TestConfig."""
@@ -15,12 +16,14 @@ def app():
         db.session.remove()
         db.drop_all()  # Drop all tables after tests
 
+
 @pytest.fixture
 def sample_user():
     return {
         "username": "testuser",
         "password": "securepassword123"
     }
+
 
 @pytest.fixture
 def client(app) -> FlaskClient:
@@ -46,6 +49,7 @@ def test_create_account_success(client: FlaskClient, sample_user):
         assert len(user.salt) == 32  # Salt should be 32 characters (hex)
         assert len(user.password) == 64  # Password should be 64-character SHA-256 hash
 
+
 def test_create_account_duplicate_user(client: FlaskClient, sample_user):
     """Test creating an account with a duplicate username."""
     # Create the user first
@@ -58,12 +62,14 @@ def test_create_account_duplicate_user(client: FlaskClient, sample_user):
     json_data = response2.get_json()
     assert json_data["error"] == f"User with username '{sample_user['username']}' already exists"
 
+
 def test_create_account_missing_fields(client: FlaskClient):
     """Test creating an account with missing fields."""
     response = client.post("/create-account", json={"username": "incompleteuser"})
     assert response.status_code == 400
     json_data = response.get_json()
     assert json_data["error"] == "Username and password are required"
+
 
 ##########################################################
 # Login
@@ -80,6 +86,7 @@ def test_login_success(client: FlaskClient, sample_user):
     json_data = response.get_json()
     assert json_data["message"] == "Login successful"
 
+
 def test_login_invalid_password(client: FlaskClient, sample_user):
     """Test logging in with an incorrect password."""
     # Create the user first
@@ -91,12 +98,14 @@ def test_login_invalid_password(client: FlaskClient, sample_user):
     json_data = response.get_json()
     assert json_data["error"] == "Invalid credentials"
 
+
 def test_login_user_not_found(client: FlaskClient):
     """Test logging in with a non-existent user."""
     response = client.post("/login", json={"username": "nonexistentuser", "password": "password"})
     assert response.status_code == 404
     json_data = response.get_json()
     assert json_data["error"] == "User nonexistentuser not found"
+
 
 ##########################################################
 # Update Password
@@ -116,7 +125,18 @@ def test_update_password_success(client: FlaskClient, sample_user):
 
     # Verify the password has been updated
     with client.application.app_context():
+        user = Users.query.filter_by(username=sample_user["username"]).first()
+        assert user is not None
+
+        # Verify new password works
         assert Users.check_password(sample_user["username"], new_password) is True
+
+        # Verify salt and hash have been updated
+        old_password_hash = hashlib.sha256((sample_user["password"] + user.salt).encode()).hexdigest()
+        new_password_hash = hashlib.sha256((new_password + user.salt).encode()).hexdigest()
+        assert user.password == new_password_hash
+        assert user.password != old_password_hash
+
 
 def test_update_password_user_not_found(client: FlaskClient):
     """Test updating the password for a non-existent user."""
@@ -124,6 +144,7 @@ def test_update_password_user_not_found(client: FlaskClient):
     assert response.status_code == 404
     json_data = response.get_json()
     assert json_data["error"] == "User nonexistentuser not found"
+
 
 def test_update_password_missing_fields(client: FlaskClient):
     """Test updating the password with missing fields."""
