@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from cocktail_maker.clients.redis_client import redis_client
 from cocktail_maker.db import db
 from cocktail_maker.utils.logger import configure_logger
-from cocktail_maker.utils.random_utils import get_random
+from cocktail_maker.utils.random_utils import fetch_random_drink_data
 
 logger = logging.getLogger(__name__)
 configure_logger(logger)
