@@ -1,3 +1,4 @@
+import logging
 import requests
 from cocktail_maker.models.drink_model import Drink
 from typing import Optional, List
