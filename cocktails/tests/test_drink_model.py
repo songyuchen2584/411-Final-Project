@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from contextlib import contextmanager
+from unittest.mock import patch
 import re
 import sqlite3
 
@@ -8,6 +9,7 @@ import pytest
 from cocktail_maker.models.drink_model import (
     Drink,
     #######ADD FUNCTIONS##########
+    in_memory_data,
     get_random_drink,
     get_drink_by_name,
 )
@@ -18,9 +20,78 @@ def mock_redis_client(mocker):
 
 ######################################################
 #
-#    Get drinks
+#    Getting drinks
 #
 ######################################################
+
+# Mocking data
+mock_successful_response = {
+    "drinks": [
+        {
+            "idDrink": "11007",
+            "strDrink": "Margarita",
+            "strCategory": "Ordinary Drink",
+            "strAlcoholic": "Alcoholic",
+            "strGlass": "Cocktail glass",
+            "strInstructions": "Rub the rim of the glass...",
+            "strIngredient1": "Tequila",
+            "strIngredient2": "Triple sec",
+            "strIngredient3": "Lime juice",
+            "strIngredient4": "Salt",
+            "strIngredient5": None,
+            "strMeasure1": "1 1/2 oz",
+            "strMeasure2": "1/2 oz",
+            "strMeasure3": "1 oz",
+            "strMeasure4": None,
+            "strMeasure5": None,
+            "strDrinkThumb": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg",
+        }
+    ]
+}
+
+mock_invalid_response = {"drinks": None}
+mock_malformed_response = {}
+
+# Test function
+def test_get_random_drink_success():
+    """Test successful fetching of a random drink."""
+    # Mock API call
+    def mock_fetch_function():
+        return mock_successful_response
+
+    drink = Drink.get_random_drink(api_fetch_function=mock_fetch_function)
+
+    # Assertions
+    assert drink["name"] == "Margarita"
+    assert drink["category"] == "Ordinary Drink"
+    assert drink["ingredients"] == ["Tequila", "Triple sec", "Lime juice", "Salt"]
+    assert drink["measures"] == ["1 1/2 oz", "1/2 oz", "1 oz", None]
+
+def test_get_random_drink_api_failure():
+    """Test API call failure."""
+    def mock_fetch_function():
+        raise requests.RequestException("API error")
+
+    with pytest.raises(RuntimeError, match="Error fetching random drink: API error"):
+        Drink.get_random_drink(api_fetch_function=mock_fetch_function)
+
+def test_get_random_drink_invalid_response():
+    """Test invalid API response."""
+    def mock_fetch_function():
+        return mock_invalid_response
+
+    with pytest.raises(RuntimeError, match="Error fetching random drink: 'NoneType' object is not subscriptable"):
+        Drink.get_random_drink(api_fetch_function=mock_fetch_function)
+
+def test_get_random_drink_malformed_response():
+    """Test malformed API response."""
+    def mock_fetch_function():
+        return mock_malformed_response
+
+    with pytest.raises(RuntimeError, match="Error fetching random drink: 'drinks'"):
+        Drink.get_random_drink(api_fetch_function=mock_fetch_function)
+
+
 
 def test_get_drink_by_name_cache_hit(mock_redis_client):
     """
