@@ -60,31 +60,31 @@ class Drink(db.Model):
             )
 
     @classmethod
-    def get_random_drink(cls) -> dict:
+    def get_random_drink() -> "Drinks":
         """
-        Fetch a random cocktail from the API and save it to the database or cache.
-
+        Fetch a random cocktail from the API and save it to the database if it doesn't already exist.
+    
         Returns:
-            dict: A dictionary containing the cocktail details.
+            Drinks: A new or existing Drinks object containing the random cocktail details.
         
         Raises:
             Exception: If the API call fails or the response is invalid.
         """
         api_url = "https://www.thecocktaildb.com/api/json/v1/1/random.php"
-
+    
         try:
             # Make the API request
             response = requests.get(api_url)
             response.raise_for_status()  # Raise an HTTPError for bad responses
             cocktail_data = response.json()
-
+    
             # Parse API response
             drinks = cocktail_data.get("drinks")
             if not drinks:
                 raise ValueError("No drinks found in API response")
-
+    
             drink = drinks[0]  # Only one drink is returned
-            cocktail_dict = {
+            drink_data = {
                 "name": drink["strDrink"],
                 "category": drink["strCategory"],
                 "glass": drink["strGlass"],
@@ -93,24 +93,33 @@ class Drink(db.Model):
                     [drink[f"strIngredient{i}"] for i in range(1, 16) if drink[f"strIngredient{i}"]]
                 ),
             }
-
-            # Save to the database or cache it
-            if not cls.query.filter_by(name=cocktail_dict["name"]).first():
-                new_cocktail = cls(**cocktail_dict)
-                db.session.add(new_cocktail)
-                db.session.commit()
-                logger.info("New cocktail added to the database: %s", cocktail_dict["name"])
+    
+            # Save to the database or return an existing object
+            existing_drink = Drinks.query.filter_by(name=drink_data["name"]).first()
+            if existing_drink:
+                logger.info("Drink already exists in the database: %s", drink_data["name"])
+                return existing_drink
             else:
-                logger.info("Cocktail already exists in the database: %s", cocktail_dict["name"])
-
-            return cocktail_dict
-
+                # Create and save a new drink
+                new_drink = Drinks(
+                    name=drink_data["name"],
+                    category=drink_data["category"],
+                    glass=drink_data["glass"],
+                    instructions=drink_data["instructions"],
+                    ingredients=drink_data["ingredients"]
+                )
+                db.session.add(new_drink)
+                db.session.commit()
+                logger.info("New drink added to the database: %s", drink_data["name"])
+                return new_drink
+    
         except requests.RequestException as e:
-            logger.error("Failed to fetch random cocktail: %s", e)
+            logger.error("Failed to fetch random drink: %s", e)
             raise
         except Exception as e:
             logger.error("Error processing API response: %s", e)
             raise
+
 
     def update_cache_for_cocktail(mapper, connection, target):
         """
@@ -143,5 +152,5 @@ class Drink(db.Model):
             )
 
     # Register the listener for update and delete events
-    event.listen(Cocktails, 'after_update', update_cache_for_cocktail)
-    event.listen(Cocktails, 'after_delete', update_cache_for_cocktail)
+    event.listen(Drink, 'after_update', update_cache_for_cocktail)
+    event.listen(Drink, 'after_delete', update_cache_for_cocktail)
