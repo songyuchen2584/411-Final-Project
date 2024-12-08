@@ -5,6 +5,7 @@ import re
 import sqlite3
 
 import pytest
+from unittest.mock import MagicMock
 
 from cocktail_maker.models.drink_model import (
     Drink,
