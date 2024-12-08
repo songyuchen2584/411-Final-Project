@@ -125,7 +125,8 @@ class Drink():
             # Store the drink in memory
             in_memory_data[drink.name] = drink.to_dict()
             logger.info("Stored drink '%s' in memory.", drink.name)
-    
+
+            # Returns a dictionary representation of the Drink
             return drink.to_dict()
     
         except Exception as e:
@@ -196,6 +197,7 @@ class Drink():
     
             # Store the drink in memory
             in_memory_data[drink.name] = drink.to_dict()
+            # Returns a dictionary representation of the Drink
             return drink.to_dict()
     
         except requests.RequestException as e:
