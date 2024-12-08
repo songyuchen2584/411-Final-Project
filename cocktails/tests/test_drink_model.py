@@ -212,9 +212,12 @@ def test_is_drink_alcoholic_false(mock_fetch_drinks_by_alcoholic):
 
 
 def test_is_drink_alcoholic_not_found(mock_fetch_drinks_by_alcoholic):
-    """Test the case when a drink is not found."""
-    # Mock API response: no drinks
-    mock_fetch_drinks_by_alcoholic.return_value = []
+    """Test when a drink is not found in the API."""
+    # Mock API responses with empty results
+    mock_fetch_drinks_by_alcoholic.side_effect = [
+        [{"strDrink": "Margarita"}],  # Alcoholic drinks
+        [{"strDrink": "Fruit Punch"}],  # Non-alcoholic drinks
+    ]
 
-    with pytest.raises(ValueError, match="not found"):
+    with pytest.raises(ValueError, match="not found in the API data"):
         Drink.is_drink_alcoholic("Unknown Drink")
