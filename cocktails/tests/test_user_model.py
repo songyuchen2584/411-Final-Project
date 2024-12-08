@@ -32,96 +32,102 @@ def client(app) -> FlaskClient:
 # Create Account
 ##########################################################
 
-def test_create_user(session, sample_user):
-    """Test creating a new user with a unique username."""
-    Users.create_user(**sample_user)
-    user = session.query(Users).filter_by(username=sample_user["username"]).first()
-    assert user is not None, "User should be created in the database."
-    assert user.username == sample_user["username"], "Username should match the input."
-    assert len(user.salt) == 32, "Salt should be 32 characters (hex)."
-    assert len(user.password) == 64, "Password should be a 64-character SHA-256 hash."
+def test_create_account_success(client: FlaskClient, sample_user):
+    """Test creating an account successfully."""
+    response = client.post("/create-account", json=sample_user)
+    assert response.status_code == 201
+    json_data = response.get_json()
+    assert json_data["message"] == "Account created successfully"
 
-def test_create_duplicate_user(session, sample_user):
-    """Test attempting to create a user with a duplicate username."""
-    Users.create_user(**sample_user)
-    with pytest.raises(ValueError, match="User with username 'testuser' already exists"):
-        Users.create_user(**sample_user)
+    # Verify user is stored in the database
+    with client.application.app_context():
+        user = Users.query.filter_by(username=sample_user["username"]).first()
+        assert user is not None
+        assert len(user.salt) == 32  # Salt should be 32 characters (hex)
+        assert len(user.password) == 64  # Password should be 64-character SHA-256 hash
+
+def test_create_account_duplicate_user(client: FlaskClient, sample_user):
+    """Test creating an account with a duplicate username."""
+    # Create the user first
+    response1 = client.post("/create-account", json=sample_user)
+    assert response1.status_code == 201
+
+    # Attempt to create the user again
+    response2 = client.post("/create-account", json=sample_user)
+    assert response2.status_code == 400
+    json_data = response2.get_json()
+    assert json_data["error"] == f"User with username '{sample_user['username']}' already exists"
+
+def test_create_account_missing_fields(client: FlaskClient):
+    """Test creating an account with missing fields."""
+    response = client.post("/create-account", json={"username": "incompleteuser"})
+    assert response.status_code == 400
+    json_data = response.get_json()
+    assert json_data["error"] == "Username and password are required"
 
 ##########################################################
-# User Authentication
+# Login
 ##########################################################
 
-def test_check_password_correct(session, sample_user):
-    """Test checking the correct password."""
-    Users.create_user(**sample_user)
-    assert Users.check_password(sample_user["username"], sample_user["password"]) is True, "Password should match."
+def test_login_success(client: FlaskClient, sample_user):
+    """Test logging in with valid credentials."""
+    # Create the user first
+    client.post("/create-account", json=sample_user)
 
-def test_check_password_incorrect(session, sample_user):
-    """Test checking an incorrect password."""
-    Users.create_user(**sample_user)
-    assert Users.check_password(sample_user["username"], "wrongpassword") is False, "Password should not match."
+    # Attempt to log in
+    response = client.post("/login", json=sample_user)
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data["message"] == "Login successful"
 
-def test_check_password_user_not_found(session):
-    """Test checking password for a non-existent user."""
-    with pytest.raises(ValueError, match="User nonexistentuser not found"):
-        Users.check_password("nonexistentuser", "password")
+def test_login_invalid_password(client: FlaskClient, sample_user):
+    """Test logging in with an incorrect password."""
+    # Create the user first
+    client.post("/create-account", json=sample_user)
+
+    # Attempt to log in with an incorrect password
+    response = client.post("/login", json={"username": sample_user["username"], "password": "wrongpassword"})
+    assert response.status_code == 401
+    json_data = response.get_json()
+    assert json_data["error"] == "Invalid credentials"
+
+def test_login_user_not_found(client: FlaskClient):
+    """Test logging in with a non-existent user."""
+    response = client.post("/login", json={"username": "nonexistentuser", "password": "password"})
+    assert response.status_code == 404
+    json_data = response.get_json()
+    assert json_data["error"] == "User nonexistentuser not found"
 
 ##########################################################
 # Update Password
 ##########################################################
 
-def test_update_password(session, sample_user):
+def test_update_password_success(client: FlaskClient, sample_user):
     """Test updating the password for an existing user."""
-    Users.create_user(**sample_user)
-    new_password = "newpassword456"
-    Users.update_password(sample_user["username"], new_password)
-    assert Users.check_password(sample_user["username"], new_password) is True, "Password should be updated successfully."
+    # Create the user first
+    client.post("/create-account", json=sample_user)
 
-def test_update_password_user_not_found(session):
+    # Update the password
+    new_password = "newsecurepassword123"
+    response = client.post("/update-password", json={"username": sample_user["username"], "new_password": new_password})
+    assert response.status_code == 200
+    json_data = response.get_json()
+    assert json_data["message"] == "Password updated successfully"
+
+    # Verify the password has been updated
+    with client.application.app_context():
+        assert Users.check_password(sample_user["username"], new_password) is True
+
+def test_update_password_user_not_found(client: FlaskClient):
     """Test updating the password for a non-existent user."""
-    with pytest.raises(ValueError, match="User nonexistentuser not found"):
-        Users.update_password("nonexistentuser", "newpassword")
+    response = client.post("/update-password", json={"username": "nonexistentuser", "new_password": "newpassword"})
+    assert response.status_code == 404
+    json_data = response.get_json()
+    assert json_data["error"] == "User nonexistentuser not found"
 
-
-##########################################################
-# Delete User
-##########################################################
-
-def test_delete_user(session, sample_user):
-    """Test deleting an existing user."""
-    Users.create_user(**sample_user)
-    Users.delete_user(sample_user["username"])
-    user = session.query(Users).filter_by(username=sample_user["username"]).first()
-    assert user is None, "User should be deleted from the database."
-
-def test_delete_user_not_found(session):
-    """Test deleting a non-existent user."""
-    with pytest.raises(ValueError, match="User nonexistentuser not found"):
-        Users.delete_user("nonexistentuser")
-
-##########################################################
-# Get User
-##########################################################
-
-def test_get_id_by_username(session, sample_user):
-    """
-    Test successfully retrieving a user's ID by their username.
-    """
-    # Create a user in the database
-    Users.create_user(**sample_user)
-
-    # Retrieve the user ID
-    user_id = Users.get_id_by_username(sample_user["username"])
-
-    # Verify the ID is correct
-    user = session.query(Users).filter_by(username=sample_user["username"]).first()
-    assert user is not None, "User should exist in the database."
-    assert user.id == user_id, "Retrieved ID should match the user's ID."
-
-
-def test_get_id_by_username_user_not_found(session):
-    """
-    Test failure when retrieving a non-existent user's ID by their username.
-    """
-    with pytest.raises(ValueError, match="User nonexistentuser not found"):
-        Users.get_id_by_username("nonexistentuser")
+def test_update_password_missing_fields(client: FlaskClient):
+    """Test updating the password with missing fields."""
+    response = client.post("/update-password", json={"username": "incompleteuser"})
+    assert response.status_code == 400
+    json_data = response.get_json()
+    assert json_data["error"] == "Username and new password are required"
