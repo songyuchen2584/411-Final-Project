@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=C:\Users\sycds\OneDrive\Desktop\School\CS 411\Final Project\411-Final-Project\cocktails\cocktail_maker_venv
+set "VIRTUAL_ENV=C:\Users\liuje\411-Final-Project\cocktails\cocktail_maker_venv"
 
 if not defined PROMPT set PROMPT=$P$G
 
@@ -24,8 +24,8 @@ set PYTHONHOME=
 if defined _OLD_VIRTUAL_PATH set PATH=%_OLD_VIRTUAL_PATH%
 if not defined _OLD_VIRTUAL_PATH set _OLD_VIRTUAL_PATH=%PATH%
 
-set PATH=%VIRTUAL_ENV%\Scripts;%PATH%
-set VIRTUAL_ENV_PROMPT=(cocktail_maker_venv) 
+set "PATH=%VIRTUAL_ENV%\Scripts;%PATH%"
+set "VIRTUAL_ENV_PROMPT=(cocktail_maker_venv) "
 
 :END
 if defined _OLD_CODEPAGE (
