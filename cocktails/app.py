@@ -17,6 +17,7 @@ def create_app(config_class=ProductionConfig):
     app.config.from_object(config_class)
 
     db.init_app(app)  # Initialize db with app
+    print("Database URI:", app.config['SQLALCHEMY_DATABASE_URI'])
     with app.app_context():
         db.create_all()  # Recreate all tables
 
