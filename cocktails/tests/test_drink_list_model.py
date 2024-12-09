@@ -128,7 +128,7 @@ def test_count_alcoholic_drinks(mock_fetch_drinks_by_alcoholic):
     drink_list = ["Margarita", "Fruit Punch", "Old Fashioned", "Cranberry Punch", "Mojito"]
 
     # Mock `Drink.is_drink_alcoholic`
-    with patch('cocktail_maker.models.drink.Drink.is_drink_alcoholic') as mock_is_alcoholic:
+    with patch('cocktail_maker.models.drink_model.Drink.is_drink_alcoholic') as mock_is_alcoholic:
         mock_is_alcoholic.side_effect = lambda name: name in ["Margarita", "Old Fashioned"]
 
         result = DrinkListModel.count_alcoholic_drinks(drink_list)
