@@ -95,24 +95,29 @@ def test_login_user_not_found(client):
 
 def test_update_password_success(client, session, sample_user):
     """Test updating the password for an existing user."""
+    # Create the user
     client.post("/create-account", json=sample_user)
+    
+    # Fetch the old user object and explicitly detach it
     old_user = session.query(Users).filter_by(username=sample_user["username"]).first()
-
+    session.expunge(old_user)  # Detach to prevent in-memory updates affecting the test
+    
+    # Update the password
     new_password = "newsecurepassword123"
     response = client.post("/update-password", json={"username": sample_user["username"], "new_password": new_password})
     assert response.status_code == 200
     json_data = response.get_json()
     assert json_data["message"] == "Password updated successfully"
+    
+    # Reload the updated user object
+    updated_user = session.query(Users).filter_by(username=sample_user["username"]).first()
 
     # Verify the new password works
     assert Users.check_password(sample_user["username"], new_password) is True
-
-    # Ensure the old password no longer works
     assert Users.check_password(sample_user["username"], sample_user["password"]) is False
 
-    # Verify the salt is updated
-    updated_user = session.query(Users).filter_by(username=sample_user["username"]).first()
-    assert updated_user.salt != old_user.salt, "Salt should change after password update"
+    # Verify the salt and password hash are updated
+    assert updated_user.salt != old_user.salt, f"Salt should change after password update: {old_user.salt} == {updated_user.salt}"
     assert updated_user.password != old_user.password, "Password hash should change after password update"
 
 
