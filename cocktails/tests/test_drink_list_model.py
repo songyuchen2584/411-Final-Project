@@ -144,7 +144,7 @@ def test_count_alcoholic_drinks(mock_fetch_drinks_by_alcoholic):
 def test_count_alcoholic_drinks_with_errors(mock_fetch_drinks_by_alcoholic):
     """Test counting alcoholic drinks when some drinks are not found."""
     # Mock `Drink.is_drink_alcoholic` to raise errors for unknown drinks
-    with patch('cocktail_maker.models.drink.Drink.is_drink_alcoholic') as mock_is_alcoholic:
+    with patch('cocktail_maker.models.drink_model.Drink.is_drink_alcoholic') as mock_is_alcoholic:
         def mock_side_effect(name):
             if name == "Unknown Drink":
                 raise ValueError("Drink not found")
