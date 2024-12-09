@@ -47,7 +47,7 @@ def test_add_drink_invalid_name(client):
     response = client.post('/create-drink', json={})
     assert response.status_code == 400
     json_data = response.get_json()
-    assert json_data['error'] == 'Drink name is required.'
+    assert json_data['error'] == '400 Bad Request: Drink name is required.'
 
 def test_add_drink_not_found(client, mock_drink_list):
     """Test the error case when the drink is not found in the external API."""
@@ -56,7 +56,7 @@ def test_add_drink_not_found(client, mock_drink_list):
     response = client.post('/create-drink', json={'name': 'NonExistingDrink'})
     assert response.status_code == 400
     json_data = response.get_json()
-    assert json_data['error'] == 'Drink not found in the external API.'
+    assert json_data['error'] == '400 Bad Request: Drink not found in the external API.'
 
 
 
