@@ -199,40 +199,26 @@ class Drink():
     def is_drink_alcoholic(drink_name: str) -> bool:
         """
         Check if a drink is alcoholic based on its name by fetching its details from the CocktailDB API.
-
-        Args:
-            drink_name (str): The name of the drink to check.
-
-        Returns:
-            bool: True if the drink is alcoholic, False if it is non-alcoholic.
-
-        Raises:
-            ValueError: If the drink is not found or invalid data is returned.
-            RuntimeError: If there is an issue with the API request.
         """
-
         try:
-            # Fetch alcoholic and non-alcoholic drinks
-            alcoholic_drinks = fetch_drinks_by_alcoholic(alcoholic=True)
-            non_alcoholic_drinks = fetch_drinks_by_alcoholic(alcoholic=False)
-
-            # Extract and standardize drink names for comparison
-            alcoholic_names = {drink["strDrink"].strip().lower() for drink in alcoholic_drinks}
-            non_alcoholic_names = {drink["strDrink"].strip().lower() for drink in non_alcoholic_drinks}
-
-            # Standardize the input drink name
-            drink_name_lower = drink_name.strip().lower()
-
-            if drink_name_lower in alcoholic_names:
-                return True  # It's alcoholic
-            elif drink_name_lower in non_alcoholic_names:
-                return False  # It's non-alcoholic
+            # Fetch the drink details by name
+            drink_details = Drink.get_drink_by_name(drink_name)
+            alcoholic_status = drink_details["alcoholic"].lower()
+            
+            logger.info(f"Alcoholic status for '{drink_name}': {alcoholic_status}")
+            
+            # Check the 'alcoholic' field in the drink details
+            if alcoholic_status == "alcoholic":
+                return True
+            elif alcoholic_status == "non alcoholic":
+                return False
             else:
-                raise ValueError(f"Drink '{drink_name}' not found in the API data.")
-
+                logger.warning(f"Unknown alcoholic status for drink '{drink_name}': {alcoholic_status}")
+                raise ValueError(f"Unknown alcoholic status for drink '{drink_name}'")
+        
         except ValueError as e:
-            logger.warning("Validation error: %s", e)
+            logger.warning(f"Validation error: {e}")
             raise
         except Exception as e:
-            logger.error("Error determining if drink '%s' is alcoholic: %s", drink_name, e)
+            logger.error(f"Error determining if drink '{drink_name}' is alcoholic: {e}")
             raise RuntimeError(f"Error determining if drink '{drink_name}' is alcoholic: {e}")
