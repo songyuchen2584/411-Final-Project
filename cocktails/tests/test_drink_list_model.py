@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 from cocktail_maker.models.drink_list_model import DrinkListModel
 from app import create_app
 from cocktail_maker.db import db
+from config import TestConfig
 
 @pytest.fixture
 def mock_drink_list(mocker):
