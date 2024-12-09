@@ -28,7 +28,7 @@ def create_app(config_class=ProductionConfig):
     ####################################################
 
 
-    @app.route('/api/health', methods=['GET'])
+    @app.route('/health', methods=['GET'])
     def healthcheck() -> Response:
         """
         Health check route to verify the service is running.
@@ -154,25 +154,25 @@ def create_app(config_class=ProductionConfig):
     #
     ####################################################
 
-    @app.route('/api/random-drink', methods=['GET'])
+    @app.route('/random-drink', methods=['GET'])
     def fetch_random_drink():
         """
         Fetch a random drink from the CocktailDB API.
         """
         try:
-            random_drink = get_random_drink()
+            random_drink = Drink.get_random_drink()
             return jsonify({'status': 'success', 'drink': random_drink}), 200
         except RuntimeError as e:
             app.logger.error("Failed to fetch random drink: %s", e)
             return jsonify({'error': str(e)}), 500
 
-    @app.route('/api/drink/<string:drink_name>', methods=['GET'])
+    @app.route('/drink/<string:drink_name>', methods=['GET'])
     def fetch_drink_by_name(drink_name: str):
         """
         Fetch a drink by name from the CocktailDB API.
         """
         try:
-            drink = get_drink_by_name(drink_name)
+            drink = Drink.get_drink_by_name(drink_name)
             return jsonify({'status': 'success', 'drink': drink}), 200
         except ValueError as e:
             app.logger.warning("Drink not found: %s", e)
@@ -181,24 +181,26 @@ def create_app(config_class=ProductionConfig):
             app.logger.error("Failed to fetch drink by name: %s", e)
             return jsonify({'error': str(e)}), 500
 
-    @app.route('/api/drink/<string:drink_name>/alcoholic', methods=['GET'])
+    @app.route('/drink/<string:drink_name>/alcoholic', methods=['GET'])
     def check_drink_alcoholic(drink_name: str):
         """
         Check if a drink is alcoholic based on its name.
         """
         try:
-            is_alcoholic = is_drink_alcoholic(drink_name)
+            app.logger.info(f"Checking if drink '{drink_name}' is alcoholic.")
+            is_alcoholic = Drink.is_drink_alcoholic(drink_name)
+            app.logger.info(f"Alcoholic status for '{drink_name}': {is_alcoholic}")
             return jsonify({'status': 'success', 'is_alcoholic': is_alcoholic}), 200
         except ValueError as e:
-            app.logger.warning("Drink not found or invalid data: %s", e)
+            app.logger.warning(f"Drink not found or invalid data: {e}")
             return jsonify({'error': str(e)}), 404
         except RuntimeError as e:
-            app.logger.error("Failed to determine if drink is alcoholic: %s", e)
+            app.logger.error(f"Failed to determine if drink is alcoholic: {e}")
             return jsonify({'error': str(e)}), 500
-    
+            
     drink_list = DrinkListModel()
 
-    @app.route('/api/create-drink', methods=['POST'])
+    @app.route('/create-drink', methods=['POST'])
     def add_drink() -> Response:
         app.logger.info('Creating new drink')
         try:
@@ -222,7 +224,7 @@ def create_app(config_class=ProductionConfig):
             app.logger.error(f"Failed to add drink: {str(e)}")
             return make_response(jsonify({'error': str(e)}), 500)
         
-    @app.route('/api/remove-drink', methods=['POST'])
+    @app.route('/remove-drink', methods=['POST'])
     def remove_drink() -> Response:
         app.logger.info('Removing drink')
 
@@ -252,7 +254,7 @@ def create_app(config_class=ProductionConfig):
             app.logger.error(f"Failed to list drinks: {str(e)}")
             return make_response(jsonify({'error': 'Failed to retrieve drinks'}), 500)
 
-    @app.route('/api/init-db', methods=['POST'])
+    @app.route('/init-db', methods=['POST'])
     def init_db():
         """
         Initialize or recreate database tables.
