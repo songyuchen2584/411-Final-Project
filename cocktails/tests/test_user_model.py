@@ -114,6 +114,8 @@ def test_update_password_success(client, session, sample_user):
 
     # Verify the new password works
     assert Users.check_password(sample_user["username"], new_password) is True
+
+    # Ensure the old password no longer works
     assert Users.check_password(sample_user["username"], sample_user["password"]) is False
 
     # Verify the salt and password hash are updated
