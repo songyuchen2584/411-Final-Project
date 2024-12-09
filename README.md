@@ -16,9 +16,13 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
   - **Request Body:** None
   - **Response Format:** JSON
     - **Success Response Example:**
+      
       {
+      
         "status": "healthy"
+      
       }
+      
   - **Example Request:**
   - 
   - **Example Response:**
