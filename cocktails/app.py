@@ -243,7 +243,7 @@ def create_app(config_class=ProductionConfig):
             return make_response(jsonify({'error': str(e)}), 400)
 
         
-    @app.route('/api/list-drinks', methods=['GET'])
+    @app.route('/list-drinks', methods=['GET'])
     def list_drinks() -> Response:
         app.logger.info('Listing all drinks in alphabetical order')
         try:
