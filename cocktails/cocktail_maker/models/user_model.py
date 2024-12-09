@@ -141,7 +141,16 @@ class Users(db.Model):
             raise ValueError(f"User {username} not found")
 
         salt, hashed_password = cls._generate_hashed_password(new_password)
+
+        # Update the fields
         user.salt = salt
+        user.password = hashed_password
+
+        # Commit the changes and refresh the session
+        db.session.commit()
+        db.session.refresh(user)  # Ensure the session reflects the latest changes
+        logger.debug("Updating password for %s. New salt: %s, New hashed password: %s", username, salt, hashed_password)
+        logger.info("Password updated successfully for user: %s", username)
         user.password = hashed_password
         db.session.commit()
         logger.info("Password updated successfully for user: %s", username)
