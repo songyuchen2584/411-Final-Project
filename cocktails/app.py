@@ -219,7 +219,10 @@ def create_app(config_class=ProductionConfig):
 
             app.logger.info(f"Drink added: {drink.name}")
             return make_response(jsonify({'status': 'Drink added', 'drink': drink.to_dict()}), 201)
-
+        
+        except BadRequest as e:
+            return make_response(jsonify({'error': str(e)}), 400)
+    
         except Exception as e:
             app.logger.error(f"Failed to add drink: {str(e)}")
             return make_response(jsonify({'error': str(e)}), 500)
