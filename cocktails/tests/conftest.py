@@ -1,4 +1,8 @@
 import pytest
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).parent.parent))
 
 from app import create_app
 from cocktail_maker.db import db
