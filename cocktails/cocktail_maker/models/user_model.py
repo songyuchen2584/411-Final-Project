@@ -33,6 +33,7 @@ class Users(db.Model):
         """
         salt = os.urandom(16).hex()
         hashed_password = hashlib.sha256((password + salt).encode()).hexdigest()
+        logger.debug(f"Generated salt: {salt}, Hashed password: {hashed_password}")
         return salt, hashed_password
 
     @classmethod
@@ -140,6 +141,7 @@ class Users(db.Model):
             logger.info("User %s not found", username)
             raise ValueError(f"User {username} not found")
 
+        # Generate new salt and password hash
         salt, hashed_password = cls._generate_hashed_password(new_password)
 
         # Update the fields
@@ -150,7 +152,4 @@ class Users(db.Model):
         db.session.commit()
         db.session.refresh(user)  # Ensure the session reflects the latest changes
         logger.debug("Updating password for %s. New salt: %s, New hashed password: %s", username, salt, hashed_password)
-        logger.info("Password updated successfully for user: %s", username)
-        user.password = hashed_password
-        db.session.commit()
         logger.info("Password updated successfully for user: %s", username)
