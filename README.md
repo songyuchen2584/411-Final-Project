@@ -174,7 +174,7 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
         }
 
-      }
+    }
   - **Example Request:** None
   - **Example Response:**
 
@@ -212,7 +212,7 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
       Content: 
 
       {
-        
+
         "status": "success",
         "drink": {
 
@@ -228,7 +228,7 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
         }
 
-      }
+    }
   - **Example Request:** /drink/Margarita
   - **Example Response:**
 
