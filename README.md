@@ -305,3 +305,181 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
         "message": "Database initialized successfully."
 
     }
+
+### (9) Create a New Drink
+**Route:** /create-drink
+  - **Request Type:** POST
+  - **Purpose:** This route allows the creation of a new drink by adding it to the drink list. It fetches information from an external API to verify the drink's existence before adding it to the list.
+  - **Request Body:** 
+  - name(String): The name of the drink to be added.
+  - **Response Format:** JSON
+    - **Success Response Example:**
+
+      StatusCode: 201
+
+      Content: 
+
+      {
+
+        "drink": {
+
+          "id": 12345,
+          "name": "Margarita",
+          "category": "Cocktail",
+          "alcoholic": "Alcoholic",
+          "glass": "Cocktail Glass",
+          "instructions": "Shake with ice and serve.",
+          "ingredients": ["Tequila", "Lime Juice", "Triple Sec", null, null],
+          "measures": ["2 oz", "1 oz", "1/2 oz", null, null],
+          "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+        }
+
+    }
+  - **Example Request:** 
+    
+    {
+
+      "name": "Margarita"
+
+    }
+
+  - **Example Response:**
+
+    {
+
+        "status": "success",
+        "drink": {
+
+          "id": 12345,
+          "name": "Margarita",
+          "category": "Cocktail",
+          "alcoholic": "Alcoholic",
+          "glass": "Cocktail Glass",
+          "instructions": "Shake with ice and serve.",
+          "ingredients": ["Tequila", "Lime Juice", "Triple Sec", null, null],
+          "measures": ["2 oz", "1 oz", "1/2 oz", null, null],
+          "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+        }
+
+    }
+
+### (10) Remove a Drink
+**Route:** /remove-drink
+  - **Request Type:** POST
+  - **Purpose:** This route removes an existing drink from the drink list by its name.
+  - **Request Body:** 
+  - name(String): The name of the drink to be removed.
+  - **Response Format:** JSON
+    - **Success Response Example:**
+
+      StatusCode: 200
+
+      Content: 
+
+      {
+
+        "id": "Mojito"
+
+      }
+  - **Example Request:** 
+    
+    {
+
+      "name": "Margarita"
+
+    }
+
+  - **Example Response:**
+
+    {
+
+      "status": "Drink removed",
+      "id": "Mojito"
+
+    }
+
+### (11) List Drinks in Alphabetical Order
+**Route:** /list-drinks
+  - **Request Type:** GET
+  - **Purpose:** Retrieves a list of all drinks in alphabetical order.
+  - **Request Body:** None
+  - **Response Format:** JSON
+    - **Success Response Example:**
+
+      StatusCode: 200
+
+      Content: 
+
+      {
+
+        "drinks": [
+
+          {
+
+            "id": 12345,
+            "name": "Margarita",
+            "category": "Cocktail",
+            "alcoholic": "Alcoholic",
+            "glass": "Cocktail Glass",
+            "instructions": "Shake with ice and serve.",
+            "ingredients": ["Tequila", "Lime Juice", "Triple Sec", null, null],
+            "measures": ["2 oz", "1 oz", "1/2 oz", null, null],
+            "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+          },
+          {
+
+            "id": 67890,
+            "name": "Martini",
+            "category": "Cocktail",
+            "alcoholic": "Alcoholic",
+            "glass": "Martini Glass",
+            "instructions": "Stir well and serve.",
+            "ingredients": ["Gin", "Dry Vermouth", null, null],
+            "measures": ["2 oz", "1 oz", null, null],
+            "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+          }
+
+        ]
+
+      }
+  - **Example Request:** None
+  - **Example Response:**
+
+    {
+
+        "drinks": [
+
+          {
+
+            "id": 12345,
+            "name": "Margarita",
+            "category": "Cocktail",
+            "alcoholic": "Alcoholic",
+            "glass": "Cocktail Glass",
+            "instructions": "Shake with ice and serve.",
+            "ingredients": ["Tequila", "Lime Juice", "Triple Sec", null, null],
+            "measures": ["2 oz", "1 oz", "1/2 oz", null, null],
+            "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+          },
+          {
+
+            "id": 67890,
+            "name": "Martini",
+            "category": "Cocktail",
+            "alcoholic": "Alcoholic",
+            "glass": "Martini Glass",
+            "instructions": "Stir well and serve.",
+            "ingredients": ["Gin", "Dry Vermouth", null, null],
+            "measures": ["2 oz", "1 oz", null, null],
+            "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+          }
+
+        ]
+
+      }
