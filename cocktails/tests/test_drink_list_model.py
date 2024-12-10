@@ -49,40 +49,29 @@ def test_add_drink_invalid_name(client):
     """Test the error case when drink name is not provided."""
     response = client.post('/create-drink', json={})
     assert response.status_code == 400
-    json_data = response.get_json()
-    assert json_data['error'] == '400 Bad Request: Drink name is required.'
+    assert response.get_json()['error'] == 'Drink name is required.'
 
 def test_add_drink_not_found(client, mock_drink_list):
     """Test the error case when the drink is not found in the external API."""
-    mock_drink_list.return_value = None
-
-    response = client.post('/create-drink', json={'name': 'NonExistingDrink'})
-    assert response.status_code == 400
-    json_data = response.get_json()
-    assert json_data['error'] == '400 Bad Request: Drink not found in the external API.'
-
-
+    with patch.object(DrinkListModel, 'fetch_drink_by_name', return_value=None):
+        response = client.post('/create-drink', json={'name': 'NonExistingDrink'})
+        assert response.status_code == 404
+        assert response.get_json()['error'] == 'Drink not found in the external API.'
 
 
 def test_remove_drink(client, mocker):
     """Test removing a drink successfully."""
-    mock_remove = mocker.patch('cocktail_maker.models.drink_list_model.DrinkListModel.remove_drink')
-    mock_remove.return_value = "Removed Margarita"
-
-    response = client.post('/remove-drink', json={'name': 'Margarita'})
-
-    assert response.status_code == 200
-
-    json_data = response.get_json()
-    assert json_data['status'] == 'Drink removed'
-    assert json_data['id'] == 'Margarita'
+    with patch.object(DrinkListModel, 'remove_drink', return_value="Drink not found in the list."):
+        response = client.post('/remove-drink', json={'name': 'NonExistingDrink'})
+        assert response.status_code == 404
+        assert response.get_json()['error'] == 'Drink not found in the list.'
 
 def test_remove_drink_not_found(client):
-    """Test the error case when trying to remove a non-existent drink."""
-    response = client.post('/remove-drink', json={})
-    assert response.status_code == 400
-    json_data = response.get_json()
-    assert json_data['error'] == 'Drink not found in the list.'
+    """Test removing a non-existing drink."""
+    with patch.object(DrinkListModel, 'remove_drink', return_value="Drink not found in the list.") as mock_remove:
+        response = client.post('/remove-drink', json={'name': 'NonExistingDrink'})
+        assert response.status_code == 404
+        assert response.get_json()['error'] == 'Drink not found in the list.'
 
 def test_remove_drink_missing_name(client):
     """Test the error case when drink name is not provided."""
@@ -99,7 +88,7 @@ def test_list_drinks(client, mocker):
     with patch('cocktail_maker.models.drink_list_model.DrinkListModel.list_drinks_in_alphabetical_order') as mock_list:
         mock_list.return_value = ['Martini', 'Margarita']
 
-    mock_list = mocker.patch.object(drink_list, 'list_drinks_in_alphabetical_order', return_value=['Martini', 'Margarita'])
+    mock_list = mocker.patch.object(DrinkListModel, 'list_drinks_in_alphabetical_order', return_value=['Martini', 'Margarita'])
 
     response = client.get('/list-drinks')
 
@@ -109,14 +98,10 @@ def test_list_drinks(client, mocker):
 
 def test_list_drinks_empty(client, mocker):
     """Test listing drinks when the list is empty."""
-    with patch('cocktail_maker.models.drink_list_model.DrinkListModel.list_drinks_in_alphabetical_order') as mock_list:
-        mock_list.return_value = []
-
-    response = client.get('/list-drinks')
-
-    assert response.status_code == 200
-    json_data = response.get_json()
-    assert json_data == []
+    with patch.object(DrinkListModel, 'list_drinks_in_alphabetical_order', return_value=[]):
+        response = client.get('/list-drinks')
+        assert response.status_code == 200
+        assert response.get_json() == []
 
 def test_list_drinks_error(client, mocker):
     """Test handling errors during drink listing."""

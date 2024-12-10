@@ -197,65 +197,6 @@ def create_app(config_class=ProductionConfig):
         except RuntimeError as e:
             app.logger.error(f"Failed to determine if drink is alcoholic: {e}")
             return jsonify({'error': str(e)}), 500
-            
-    drink_list = DrinkListModel()
-
-    @app.route('/create-drink', methods=['POST'])
-    def add_drink() -> Response:
-        app.logger.info('Creating new drink')
-        try:
-            data = request.get_json()
-            drink_name = data.get('name')
-
-            if not drink_name:
-                raise BadRequest("Drink name is required.")
-            
-            add_response = drink_list.add_drink(drink_name)
-
-            if "not found" in add_response:
-                raise BadRequest("Drink not found in the external API.") 
-            
-            drink = next((d for d in drink_list.drinks if d.name.lower() == drink_name.lower()), None)
-
-            app.logger.info(f"Drink added: {drink.name}")
-            return make_response(jsonify({'status': 'Drink added', 'drink': drink.to_dict()}), 201)
-        
-        except BadRequest as e:
-            return make_response(jsonify({'error': str(e)}), 400)
-    
-        except Exception as e:
-            app.logger.error(f"Failed to add drink: {str(e)}")
-            return make_response(jsonify({'error': str(e)}), 500)
-        
-    @app.route('/remove-drink', methods=['POST'])
-    def remove_drink() -> Response:
-        app.logger.info('Removing drink')
-
-        try:
-            data = request.get_json()
-            name = data.get('name')
-
-            if not name:
-                raise BadRequest("Drink name is required.")
-            
-            drink_list.remove_drink(name)
-            app.logger.info(f"Drink removed: {name}")
-            return make_response(jsonify({'status': 'Drink removed', 'id': name}), 200)
-        
-        except ValueError as e:
-            return make_response(jsonify({'error': str(e)}), 400)
-
-        
-    @app.route('/list-drinks', methods=['GET'])
-    def list_drinks() -> Response:
-        app.logger.info('Listing all drinks in alphabetical order')
-        try:
-            drinks_json = drink_list.list_drinks_in_alphabetical_order()
-            return jsonify(drinks_json)
-        
-        except Exception as e:
-            app.logger.error(f"Failed to list drinks: {str(e)}")
-            return make_response(jsonify({'error': 'Failed to retrieve drinks'}), 500)
 
     @app.route('/init-db', methods=['POST'])
     def init_db():
@@ -320,16 +261,21 @@ def create_app(config_class=ProductionConfig):
         
     @app.route('/remove-drink', methods=['POST'])
     def remove_drink() -> Response:
+        """Remove a drink from the drink list."""
         app.logger.info('Removing drink')
         try:
             data = request.get_json()
             drink_name = data.get('name')
 
+            # Check for missing drink name
             if not drink_name:
                 return make_response(jsonify({'error': 'Drink name is required.'}), 400)
 
-            result = DrinkListModel.remove_drink(drink_name)
-            if "not found" in result:
+            # Attempt to remove the drink
+            result = app.drink_list.remove_drink(drink_name)
+
+            # Handle 'not found' case
+            if "not found" in result.lower():
                 return make_response(jsonify({'error': 'Drink not found in the list.'}), 404)
 
             return make_response(jsonify({'status': 'Drink removed', 'id': drink_name}), 200)
@@ -337,6 +283,8 @@ def create_app(config_class=ProductionConfig):
         except Exception as e:
             app.logger.error(f"Failed to remove drink: {str(e)}")
             return make_response(jsonify({'error': str(e)}), 500)
+
+
 
 
         
