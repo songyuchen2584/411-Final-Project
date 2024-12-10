@@ -17,19 +17,23 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
   - **Response Format:** JSON
     - **Success Response Example:**
       StatusCode: 200
+      
       Content: 
 
       {
 
         "status": "healthy"
+
       }
       
   - **Example Request:**
     {}
   - **Example Response:**
-  
+
     {
+
       "status": "healthy"
+
     }
 
 ### (1) Create Account
@@ -42,6 +46,7 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
   - **Response Format:** JSON
     - **Success Response Example:**
       StatusCode: 201
+
       Content: 
 
       {
@@ -63,5 +68,6 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
       "message": "Account created successfully",
       "status": "201"
+
     }
 
