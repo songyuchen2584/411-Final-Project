@@ -19,7 +19,9 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
       StatusCode: 200
       Content: 
       {
+
         "status": "healthy"
+
       }
       
   - **Example Request:**
@@ -41,16 +43,22 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
       StatusCode: 201
       Content: 
       {
+
         "message": "Account created successfully"
+
       }
   - **Example Request:**
       {
+
         "username": "newuser123",
         "password": "securepassword"
+
       }
   - **Example Response:**
     {
+
       "message": "Account created successfully"
       "status": "201"
+      
     }
 
