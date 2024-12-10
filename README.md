@@ -145,4 +145,54 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
     }
 
+### (5) Fetch Random Drink
+**Route:** /random-drink
+  - **Request Type:** GET
+  - **Purpose:** Fetches a random drink from the CocktailDB API.
+  - **Request Body:** None
+  - **Response Format:** JSON
+    - **Success Response Example:**
+
+      StatusCode: 200
+
+      Content: 
+
+      {
+
+        "drink": {
+
+          "id": 12345,
+          "name": "Margarita",
+          "category": "Cocktail",
+          "alcoholic": "Alcoholic",
+          "glass": "Cocktail Glass",
+          "instructions": "Shake with ice and serve.",
+          "ingredients": ["Tequila", "Lime Juice", "Triple Sec", null, null],
+          "measures": ["2 oz", "1 oz", "1/2 oz", null, null],
+          "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+        }
+
+      }
+  - **Example Request:** None
+  - **Example Response:**
+
+    {
+
+        "status": "success",
+        "drink": {
+
+          "id": 12345,
+          "name": "Margarita",
+          "category": "Cocktail",
+          "alcoholic": "Alcoholic",
+          "glass": "Cocktail Glass",
+          "instructions": "Shake with ice and serve.",
+          "ingredients": ["Tequila", "Lime Juice", "Triple Sec", null, null],
+          "measures": ["2 oz", "1 oz", "1/2 oz", null, null],
+          "thumbnail": "https://www.thecocktaildb.com/images/media/drink/5noda61589575158.jpg"
+
+        }
+
+    }
 
