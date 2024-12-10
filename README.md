@@ -212,6 +212,7 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
       Content: 
 
       {
+        
         "status": "success",
         "drink": {
 
