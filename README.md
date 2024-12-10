@@ -37,7 +37,7 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
     }
 
-### (1) Create Account
+### (2) Create Account
 **Route:** /create-account
   - **Request Type:** POST
   - **Purpose:** Creates a new user account
@@ -72,4 +72,77 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
         "status": "201"
 
     }
+
+### (3) Login Account
+**Route:** /login
+  - **Request Type:** POST
+  - **Purpose:** Authenticates a user by verifying their username and password.
+  - **Request Body:** 
+    - username (String): User's username.
+    - password (String): User' password.
+  - **Response Format:** JSON
+    - **Success Response Example:**
+
+      StatusCode: 200
+
+      Content: 
+
+      {
+
+        "message": "Login successful"
+
+      }
+  - **Example Request:**
+
+      {
+
+        "username": "user123",
+        "password": "mypassword"
+
+      }
+  - **Example Response:**
+
+    {
+
+        "message": "Login successful",
+        "status": "200"
+
+    }
+
+### (4) Update Password
+**Route:** /update-password
+  - **Request Type:** POST
+  - **Purpose:** Updates the password for an existing user account.
+  - **Request Body:** 
+    - username (String): The username of the user whose password is being updated.
+    - password (String): The new password to be set for the user.
+  - **Response Format:** JSON
+    - **Success Response Example:**
+
+      StatusCode: 200
+
+      Content: 
+
+      {
+
+        "message": "Password updated successfully"
+
+      }
+  - **Example Request:**
+
+      {
+
+        "username": "user123",
+        "new_password": "newsecurepassword"
+
+      }
+  - **Example Response:**
+
+    {
+
+        "message": "Password updated successfully",
+        "status": "200"
+
+    }
+
 
