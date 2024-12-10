@@ -159,7 +159,6 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
       {
 
-        "status": "success",
         "drink": {
 
           "id": 12345,
@@ -213,7 +212,6 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
       {
 
-        "status": "success",
         "drink": {
 
           "id": 12345,
@@ -278,5 +276,32 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 
         "status": "success",
         "is_alcoholic": true
+
+    }
+
+### (8) Initialize Databse
+**Route:** /init-db
+  - **Request Type:** POST
+  - **Purpose:** This route initializes the database by dropping all existing tables and recreating them as defined in the SQLAlchemy models. It ensures a clean slate, which is helpful during development or for resetting the application. Caution: All existing data will be permanently deleted.
+  - **Request Body:** None
+  - **Response Format:** JSON
+    - **Success Response Example:**
+
+      StatusCode: 200
+
+      Content: 
+
+      {
+
+        "message": "Database initialized successfully."
+
+      }
+  - **Example Request:** POST /init-db
+  - **Example Response:**
+
+    {
+
+        "status": "success",
+        "message": "Database initialized successfully."
 
     }
