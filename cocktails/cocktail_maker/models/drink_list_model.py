@@ -9,9 +9,21 @@ configure_logger(logger)
 
 class DrinkListModel:
     def __init__(self):
+        """
+        Initialize the DrinkListModel with an empty list of drinks.
+        """
         self.drinks = []
 
     def fetch_drink_by_name(self, drink_name: str) -> Optional[Drink]:
+        """
+        Fetch drink details by name from an external API.
+
+        Args:
+            drink_name (str): The name of the drink to fetch.
+
+        Returns:
+            Optional[Drink]: A Drink object if the drink is found, otherwise None.
+        """
         url = f"https://www.thecocktaildb.com/api/json/v1/1/search.php?s={drink_name}"
         response = requests.get(url)
         data = response.json()
@@ -41,6 +53,15 @@ class DrinkListModel:
         return None
     
     def add_drink(self, drink_name: str) -> str:
+        """
+        Add a drink to the internal list by fetching it from the API.
+
+        Args:
+            drink_name (str): The name of the drink to add.
+
+        Returns:
+            str: A message indicating the result of the operation.
+        """
         drink = self.fetch_drink_by_name(drink_name)
         if drink:
             self.drinks.append(drink)
@@ -48,6 +69,15 @@ class DrinkListModel:
         return "Drink not found."
     
     def remove_drink(self, drink_name: str) -> str:
+        """
+        Remove a drink from the internal list by name.
+
+        Args:
+            drink_name (str): The name of the drink to remove.
+
+        Returns:
+            str: A message indicating the result of the operation.
+        """
         for drink in self.drinks:
             if drink.name.lower() == drink_name.lower():
                 self.drinks.remove(drink)
@@ -55,6 +85,19 @@ class DrinkListModel:
         return "Drink not found in the list."
     
     def list_drinks_in_alphabetical_order(self) -> List[str]:
+        """
+        List the names of all possible drinks in alphabetical order.
+
+        Returns:
+            List[str]: A list of drink names sorted alphabetically.
+        """
+        sorted_drinks = sorted(self.drinks, key=lambda x: x.name.lower())
+        drink_names = []
+
+        for drink in sorted_drinks:
+            drink_names.append(drink.name)
+
+        return drink_names
         sorted_drinks = sorted(self.drinks, key=lambda x: x.name.lower())
         drink_names = []
 

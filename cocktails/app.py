@@ -284,7 +284,75 @@ def create_app(config_class=ProductionConfig):
             app.logger.error("Failed to initialize database: %s", str(e))
             return jsonify({"status": "error", "message": "Failed to initialize database."}), 500
 
+    ####################################################
+    #
+    # Drink List management
+    #
+    ####################################################
+    app.drink_list = DrinkListModel()
+
+    @app.route('/create-drink', methods=['POST'])
+    def add_drink() -> Response:
+        app.logger.info('Creating new drink')
+        try:
+            data = request.get_json()
+            drink_name = data.get('name')
+
+            if not drink_name:
+                return make_response(jsonify({'error': 'Drink name is required.'}), 400)
+
+            add_response = app.drink_list.add_drink(drink_name)
+
+            if "not found" in add_response:
+                return make_response(jsonify({'error': 'Drink not found in the external API.'}), 404)
+
+            # Get the drink from the list
+            drink = next((d for d in app.drink_list.drinks if d.name.lower() == drink_name.lower()), None)
+            if not drink:
+                raise RuntimeError("Failed to add drink due to an unexpected error.")
+
+            return make_response(jsonify({'status': 'Drink added', 'drink': drink.to_dict()}), 201)
+
+        except Exception as e:
+            app.logger.error(f"Failed to add drink: {str(e)}")
+            return make_response(jsonify({'error': str(e)}), 500)
+
+        
+    @app.route('/remove-drink', methods=['POST'])
+    def remove_drink() -> Response:
+        app.logger.info('Removing drink')
+        try:
+            data = request.get_json()
+            drink_name = data.get('name')
+
+            if not drink_name:
+                return make_response(jsonify({'error': 'Drink name is required.'}), 400)
+
+            result = DrinkListModel.remove_drink(drink_name)
+            if "not found" in result:
+                return make_response(jsonify({'error': 'Drink not found in the list.'}), 404)
+
+            return make_response(jsonify({'status': 'Drink removed', 'id': drink_name}), 200)
+
+        except Exception as e:
+            app.logger.error(f"Failed to remove drink: {str(e)}")
+            return make_response(jsonify({'error': str(e)}), 500)
+
+
+        
+    @app.route('/list-drinks', methods=['GET'])
+    def list_drinks() -> Response:
+        app.logger.info('Listing all drinks in alphabetical order')
+        try:
+            drinks_json = DrinkListModel.list_drinks_in_alphabetical_order()
+            return jsonify(drinks_json)
+        
+        except Exception as e:
+            app.logger.error(f"Failed to list drinks: {str(e)}")
+            return make_response(jsonify({'error': 'Failed to retrieve drinks'}), 500)
+    
     return app
+
 
 if __name__ == '__main__':
     app = create_app()
