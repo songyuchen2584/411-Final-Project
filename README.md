@@ -12,17 +12,18 @@ The application is utilizes Flask, SQLAlchemy for database operations, and integ
 ### (1) Health Check
 **Route:** /health
   - **Request Type:** GET
-  - **Purpose:**
+  - **Purpose:** This route serves as a health check endpoint to verify that the service is running and operational.
   - **Request Body:** None
   - **Response Format:** JSON
     - **Success Response Example:**
-      
+      StatusCode: 200
       {
-      
         "status": "healthy"
-      
       }
       
   - **Example Request:**
-  - 
+    {}
   - **Example Response:**
+    {
+      "status": "healthy"
+    }
