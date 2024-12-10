@@ -110,7 +110,7 @@ fetch_drink_by_name() {
 
 check_drink_alcoholic() {
   echo "Checking if drink is alcoholic (Absolutely Cranberry Smash)..."
-  curl -X GET "$BASE_URL/drink/Absolutely Cranberry Smash/alcoholic"
+  curl -X GET "$BASE_URL/drink/Absolutely%20Cranberry%20Smash/alcoholic"
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Alcoholic status fetched successfully."
     [ "$ECHO_JSON" = true ] && echo "$response" | jq .
