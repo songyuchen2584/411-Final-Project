@@ -27,6 +27,10 @@ def create_app(config_class=ProductionConfig):
     #
     ####################################################
 
+    @app.route('/')
+    def index():
+        return "Welcome to the Cocktail Maker API!"
+
 
     @app.route('/health', methods=['GET'])
     def healthcheck() -> Response:
